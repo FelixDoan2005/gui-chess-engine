@@ -1,1 +1,1 @@
-from engine.board import Board
+from engine.ai import AI
