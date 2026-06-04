@@ -4,7 +4,7 @@ from ui import Renderer
 from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
-from ui.chess_logic import pawn_moves, knight_moves
+from ui.chess_logic import pawn_moves, knight_moves, bishop_moves
 
 def select_piece(square, piece, board, piece_moves):
     row, col = square
@@ -25,6 +25,7 @@ def main():
     piece_moves = {
         "pawn": pawn_moves,
         "knight" : knight_moves,
+        "bishop" : bishop_moves,
     }
 
     running = True

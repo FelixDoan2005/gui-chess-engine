@@ -92,3 +92,56 @@ def knight_moves(row, col, grid, colour):
                 moves.append((landing_row,landing_col))
 
     return moves
+
+def bishop_moves(row, col, grid, colour):
+    moves = []
+
+    # down-right
+    for i in range(1, 8):
+        if 0 <= row + i <= 7 and 0 <= col + i <= 7:
+            piece = grid[row+i][col+i]
+            if piece is None:
+                moves.append((row+i, col+i))
+            elif not piece.startswith(colour):
+                moves.append((row+i, col+i))
+                break
+            else:
+                break
+
+    # down-left
+    for i in range(1, 8):
+        if 0 <= row + i <= 7 and 0 <= col - i <= 7:
+            piece = grid[row+i][col-i]
+            if piece is None:
+                moves.append((row+i, col-i))
+            elif not piece.startswith(colour):
+                moves.append((row+i, col-i))
+                break
+            else:
+                break
+
+    # up-right
+    for i in range(1, 8):
+        if 0 <= row - i <= 7 and 0 <= col + i <= 7:
+            piece = grid[row-i][col+i]
+            if piece is None:
+                moves.append((row-i, col+i))
+            elif not piece.startswith(colour):
+                moves.append((row-i, col+i))
+                break
+            else:
+                break
+
+    # up-left
+    for i in range(1, 8):
+        if 0 <= row - i <= 7 and 0 <= col - i <= 7:
+            piece = grid[row-i][col-i]
+            if piece is None:
+                moves.append((row-i, col-i))
+            elif not piece.startswith(colour):
+                moves.append((row-i, col-i))
+                break
+            else:
+                break
+
+    return moves
