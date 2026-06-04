@@ -23,6 +23,7 @@ class Renderer:
             square_y = row * SQUARE_SIZE + OFFSET
 
             # draw a small transparent grey circle at the centre
+            # shows legal moves
             circle_surface = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
             pygame.draw.circle(circle_surface, (20, 20, 20, 100), (SQUARE_SIZE // 2, SQUARE_SIZE // 2), 15)
             self.screen.blit(circle_surface, (square_x, square_y))
