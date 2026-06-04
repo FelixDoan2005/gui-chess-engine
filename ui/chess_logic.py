@@ -52,8 +52,6 @@ def pawn_moves(row, col, grid, colour):
 
     square_in_front = grid[one_step][col]
     square_two_ahead = grid[two_steps][col]
-    squares_in_left_diagonal = grid[one_step][col-1]
-    squares_in_right_diagonal = grid[one_step][col+1]
 
     # move forward 1
     if square_in_front == None:
@@ -67,9 +65,9 @@ def pawn_moves(row, col, grid, colour):
             moves.append((two_steps, col))
 
     #captures
-    if squares_in_left_diagonal is not None and not grid[one_step][col-1].startswith(colour):
+    if col > 0 and grid[one_step][col-1] is not None and not grid[one_step][col-1].startswith(colour):
         moves.append((one_step, col-1))
-    if squares_in_right_diagonal is not None and not grid[one_step][col+1].startswith(colour):
+    if col < 7 and grid[one_step][col+1] is not None and not grid[one_step][col+1].startswith(colour):
         moves.append((one_step, col+1))
 
     return moves
@@ -140,6 +138,58 @@ def bishop_moves(row, col, grid, colour):
                 moves.append((row-i, col-i))
             elif not piece.startswith(colour):
                 moves.append((row-i, col-i))
+                break
+            else:
+                break
+
+    return moves
+
+def rook_moves(row, col, grid, colour):
+    moves = []
+    for i in range(1,8):
+        #down
+        if 0 <= row + i <= 7:
+            piece = grid[row+i][col]
+            if piece is None:
+                moves.append((row+i,col))
+            elif not piece.startswith(colour):
+                moves.append((row+i,col))
+                break
+            else:
+                break
+
+    for i in range(1,8):
+        #up
+        if 0 <= row - i <= 7:
+            piece = grid[row-i][col]
+            if piece is None:
+                moves.append((row-i,col))
+            elif not piece.startswith(colour):
+                moves.append((row-i,col))
+                break
+            else:
+                break
+
+    for i in range(1,8):
+        #left 
+        if 0 <= col- i <= 7:
+            piece = grid[row][col-i]
+            if piece is None:
+                moves.append((row,col-i))
+            elif not piece.startswith(colour):
+                moves.append((row,col-i))
+                break
+            else:
+                break
+            
+    for i in range(1,8):
+        #left 
+        if 0 <= col+ i <= 7:
+            piece = grid[row][col+i]
+            if piece is None:
+                moves.append((row,col+i))
+            elif not piece.startswith(colour):
+                moves.append((row,col+i))
                 break
             else:
                 break
