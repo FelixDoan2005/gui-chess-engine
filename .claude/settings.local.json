@@ -4,7 +4,9 @@
       "Bash(pip install *)",
       "Bash(C:\\\\Users\\\\phucd\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe -m pip install pygame)",
       "PowerShell(& \"$env:LOCALAPPDATA\\\\Python\\\\pythoncore-3.14-64\\\\python.exe\" -m pip install pygame)",
-      "PowerShell(& \"$env:LOCALAPPDATA\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -m pip install pygame)"
+      "PowerShell(& \"$env:LOCALAPPDATA\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -m pip install pygame)",
+      "Bash(git branch *)",
+      "Bash(git push *)"
     ]
   }
 }
