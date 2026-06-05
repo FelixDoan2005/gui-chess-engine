@@ -195,3 +195,7 @@ def rook_moves(row, col, grid, colour):
                 break
 
     return moves
+
+def queen_moves(row, col, grid, colour):
+    moves = bishop_moves(row, col, grid, colour) + rook_moves(row, col, grid, colour)
+    return moves
