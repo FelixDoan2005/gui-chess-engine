@@ -40,10 +40,6 @@ class Board:
             self.white_king = (tr, tc)
         if self.grid[tr][tc] == "black_king":
             self.black_king = (tr, tc)
-        
-
-
-
 
 def pawn_moves(row, col, grid, colour):
     moves = []
@@ -269,3 +265,26 @@ def in_check(grid, colour, king_pos):
         return True
     else:
         return False
+    
+
+def is_legal_move(grid, colour, from_sq, to_sq, king_pos):
+        fr, fc = from_sq
+        tr, tc = to_sq
+
+        piece = grid[fr][fc]
+        captured = grid[tr][tc]
+
+        if grid[fr][fc].split("_")[1] == "king":
+            king_pos = (tr, tc)
+
+        grid[tr][tc] = piece
+        grid[fr][fc] = None
+
+        result = not in_check(grid, colour, king_pos)
+
+        grid[fr][fc] = piece
+        grid[tr][tc] = captured
+
+        return result
+
+

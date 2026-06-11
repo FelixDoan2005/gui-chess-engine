@@ -4,14 +4,17 @@ from ui import Renderer
 from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
-from ui.chess_logic import pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, in_check
+from ui.chess_logic import is_legal_move, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, in_check
 
 def select_piece(square, piece, board, piece_moves):
     row, col = square
     colour = piece.split("_")[0]
     current_piece = piece.split("_")[1]
     highlights = piece_moves[current_piece](row, col, board.grid, colour)
-    return square, highlights
+    king_pos = board.white_king if colour == "white" else board.black_king
+    legal_highlights = [move for move in highlights if is_legal_move(board.grid, colour, square, move, king_pos)]
+    print(legal_highlights)
+    return square, legal_highlights
 
 def main():
     screen = create_window()
@@ -21,6 +24,7 @@ def main():
     handler = InputHandler()
     highlights = []
     selected_square = None
+    is_in_check = False
 
     piece_moves = {
         "pawn": pawn_moves,
@@ -42,10 +46,9 @@ def main():
             if square:
                 piece = board.get_piece(*square)
 
-                if selected_square is None:
-                    # first click — select a piece
-                    if piece is not None and piece.startswith(board.turn):
-                        selected_square, highlights = select_piece(square, piece, board, piece_moves)
+                if piece is not None and piece.startswith(board.turn):
+                    selected_square, highlights = select_piece(square, piece, board, piece_moves)
+                    
                 else:
                     # second click — move if the square is a legal move
                     if square in highlights:
@@ -56,10 +59,7 @@ def main():
                         else:
                             king_pos = board.black_king
                         selected_square = None
-
-                        if in_check(board.grid, moving_colour, king_pos):
-                            print(f"{moving_colour} is in check!")
-                            #note now need to make all legal moves whilst in check
+                        is_in_check = in_check(board.grid, moving_colour, king_pos)
 
                         highlights = []
                     else:
