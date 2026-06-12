@@ -24,6 +24,12 @@ class Board:
         self.turn = "white"
         self.white_king = (7,4)
         self.black_king = (0,4)
+        self.white_king_moved = False
+        self.white_rook_kingside_moved = False
+        self.white_rook_queenside_moved = False
+        self.black_king_moved = False
+        self.black_rook_kingside_moved = False  
+        self.black_rook_queenside_moved = False
 
     def get_piece(self, row, col):
         return self.grid[row][col]
@@ -38,8 +44,38 @@ class Board:
         #tracks kings
         if self.grid[tr][tc] == "white_king":
             self.white_king = (tr, tc)
+            self.white_king_moved = True
         if self.grid[tr][tc] == "black_king":
             self.black_king = (tr, tc)
+            self.black_king_moved = True
+
+        if self.grid[tr][tc] == "white_rook":
+            if from_sq == (7,0):
+                self.white_rook_queenside_moved = True
+            elif from_sq == (7,7):
+                self.white_rook_kingside_moved = True
+
+        if self.grid[tr][tc] == "black_rook":
+            if from_sq == (0,0):
+                self.black_rook_queenside_moved = True
+            elif from_sq == (0,7):
+                self.black_rook_kingside_moved = True
+
+        if self.grid[tr][tc] == "white_king" and from_sq == (7,4):
+            if to_sq == (7,6):
+                self.grid[7][5] = "white_rook"
+                self.grid[7][7] = None
+            elif to_sq == (7,2):
+                self.grid[7][3] = "white_rook"
+                self.grid[7][0] = None
+
+        if self.grid[tr][tc] == "black_king" and from_sq == (0,4):
+            if to_sq == (0,6):
+                self.grid[0][5] = "black_rook"
+                self.grid[0][7] = None
+            elif to_sq == (0,2):
+                self.grid[0][3] = "black_rook"
+                self.grid[0][0] = None
 
 def pawn_moves(row, col, grid, colour):
     moves = []
@@ -222,7 +258,7 @@ def all_highlights_for_colour(colour, grid):
                     all_moves += moves
     return all_moves
 
-def king_moves(row, col, grid, colour):
+def king_moves(row, col, grid, colour, board):
     moves = []
 
     if colour == "white":
@@ -243,6 +279,26 @@ def king_moves(row, col, grid, colour):
             if landing_piece is None or not landing_piece.startswith(colour):
                 if (landing_row, landing_col) not in enemy_moves:
                     moves.append((landing_row, landing_col))
+
+    if board.white_king_moved == False and colour == "white":
+        if board.white_rook_kingside_moved == False:
+            if grid[7][5] is None and grid[7][6] is None:
+                if (7,5) not in enemy_moves and (7,6) not in enemy_moves and not in_check(grid, colour, (7,4)):
+                    moves.append((7,6))
+        if board.white_rook_queenside_moved == False:
+            if grid[7][1] is None and grid[7][2] is None and grid[7][3] is None:
+                if (7,2) not in enemy_moves and (7,3) not in enemy_moves and not in_check(grid, colour, (7,4)):
+                    moves.append((7,2))
+
+    if board.black_king_moved == False and colour == "black":
+        if board.black_rook_kingside_moved == False:
+            if grid[0][5] is None and grid[0][6] is None:
+                if (0,5) not in enemy_moves and (0,6) not in enemy_moves and not in_check(grid, colour, (0,4)):
+                    moves.append((0,6))
+        if board.black_rook_queenside_moved == False:
+            if grid[0][1] is None and grid[0][2] is None and grid[0][3] is None:
+                if (0,2) not in enemy_moves and (0,3) not in enemy_moves and not in_check(grid, colour, (0,4)):
+                    moves.append((0,2))
     return moves
 
 piece_moves = {
@@ -286,5 +342,4 @@ def is_legal_move(grid, colour, from_sq, to_sq, king_pos):
         grid[tr][tc] = captured
 
         return result
-
 

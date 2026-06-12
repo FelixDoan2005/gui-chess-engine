@@ -10,7 +10,10 @@ def select_piece(square, piece, board, piece_moves):
     row, col = square
     colour = piece.split("_")[0]
     current_piece = piece.split("_")[1]
-    highlights = piece_moves[current_piece](row, col, board.grid, colour)
+    if current_piece == "king":
+        highlights = piece_moves[current_piece](row, col, board.grid, colour, board)
+    else:
+        highlights = piece_moves[current_piece](row, col, board.grid, colour)
     king_pos = board.white_king if colour == "white" else board.black_king
     legal_highlights = [move for move in highlights if is_legal_move(board.grid, colour, square, move, king_pos)]
     print(legal_highlights)
@@ -60,7 +63,6 @@ def main():
                             king_pos = board.black_king
                         selected_square = None
                         is_in_check = in_check(board.grid, moving_colour, king_pos)
-
                         highlights = []
                     else:
                         if piece is not None and piece.startswith(board.turn):
