@@ -30,6 +30,7 @@ class Board:
         self.black_king_moved = False
         self.black_rook_kingside_moved = False  
         self.black_rook_queenside_moved = False
+        self.en_passant_ts = None
 
     def get_piece(self, row, col):
         return self.grid[row][col]
@@ -37,9 +38,18 @@ class Board:
     def move_piece(self, from_sq, to_sq):
         fr, fc = from_sq
         tr, tc = to_sq
-        self.grid[tr][tc] = self.grid[fr][fc]
+        moving_piece = self.grid[fr][fc]
+        self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
         self.turn = "black" if self.turn == "white" else "white"
+        prev_en_passant_ts = self.en_passant_ts
+        self.en_passant_ts = None
+
+        if moving_piece.split("_")[1] == "pawn" and abs(tr - fr) == 2:
+            self.en_passant_ts = (tr, tc)
+
+        if moving_piece.split("_")[1] == "pawn" and fc != tc and prev_en_passant_ts is not None:
+            self.grid[prev_en_passant_ts[0]][prev_en_passant_ts[1]] = None
         
         #tracks kings
         if self.grid[tr][tc] == "white_king":
@@ -77,7 +87,7 @@ class Board:
                 self.grid[0][3] = "black_rook"
                 self.grid[0][0] = None
 
-def pawn_moves(row, col, grid, colour):
+def pawn_moves(row, col, grid, colour, en_passant_ts):
     moves = []
     if colour == 'white':
         direction = -1
@@ -106,6 +116,12 @@ def pawn_moves(row, col, grid, colour):
         moves.append((one_step, col-1))
     if col < 7 and grid[one_step][col+1] is not None and not grid[one_step][col+1].startswith(colour):
         moves.append((one_step, col+1))
+
+    #en passant
+    if en_passant_ts is not None:
+        ep_row, ep_col = en_passant_ts
+        if row == ep_row and abs(ep_col - col) == 1:
+            moves.append((one_step, ep_col))
 
     return moves
 
@@ -239,7 +255,7 @@ def queen_moves(row, col, grid, colour):
 
 #all moves store to prevent illegal king moves
 
-def all_highlights_for_colour(colour, grid):
+def all_highlights_for_colour(colour, grid, en_passant_ts):
     all_moves = []
     king_steps = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
     for row in range(8):
@@ -254,7 +270,10 @@ def all_highlights_for_colour(colour, grid):
                         if 0 <= r <= 7 and 0 <= c <= 7:
                             all_moves.append((r, c))
                 elif kind in piece_moves:
-                    moves = piece_moves[kind](row, col, grid, colour)
+                    if kind == "pawn":
+                        moves = piece_moves[kind](row, col, grid, colour, en_passant_ts)
+                    else:
+                        moves = piece_moves[kind](row, col, grid, colour)
                     all_moves += moves
     return all_moves
 
@@ -266,7 +285,7 @@ def king_moves(row, col, grid, colour, board):
     else:
         enemy_colour = "white"
     
-    enemy_moves = all_highlights_for_colour(enemy_colour, grid)
+    enemy_moves = all_highlights_for_colour(enemy_colour, grid, None)
 
     king_steps = [(-1,-1),(-1,0),(0,-1),(0,1),(1,-1),(1,1),(-1,1),(1,0)]
 
@@ -316,7 +335,7 @@ def in_check(grid, colour, king_pos):
     else:
         enemy_colour = "white"
     
-    enemy_attacks = all_highlights_for_colour(enemy_colour, grid)
+    enemy_attacks = all_highlights_for_colour(enemy_colour, grid, None)
     if king_pos in enemy_attacks:
         return True
     else:
