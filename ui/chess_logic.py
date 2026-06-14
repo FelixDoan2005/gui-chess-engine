@@ -48,7 +48,7 @@ class Board:
         if moving_piece.split("_")[1] == "pawn" and abs(tr - fr) == 2:
             self.en_passant_ts = (tr, tc)
 
-        if moving_piece.split("_")[1] == "pawn" and fc != tc and prev_en_passant_ts is not None:
+        if moving_piece.split("_")[1] == "pawn" and fc != tc and prev_en_passant_ts is not None and tc == prev_en_passant_ts[1]:
             self.grid[prev_en_passant_ts[0]][prev_en_passant_ts[1]] = None
         
         #tracks kings

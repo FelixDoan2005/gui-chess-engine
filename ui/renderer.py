@@ -1,6 +1,9 @@
 import pygame
 from ui.constants import WIDTH, HEIGHT, SQUARE_SIZE, OFFSET, BOARD_IMAGE_PATH, PIECES_DIR, PIECES
 
+BUTTON_W, BUTTON_H = 300, 60
+BUTTON_X = WIDTH // 2 - BUTTON_W // 2
+
 class Renderer:
     def __init__(self, screen):
         self.screen = screen
@@ -13,6 +16,32 @@ class Renderer:
             )
             for name in PIECES
         }
+        self.font_large = pygame.font.SysFont("Arial", 64, bold=True)
+        self.font_med = pygame.font.SysFont("Arial", 32)
+
+        self.pvp_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
+        self.pve_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
+
+    def draw_menu(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Chess", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        for rect, label, active in [
+            (self.pvp_rect, "Player vs Player", True),
+            (self.pve_rect, "Player vs Engine", False),
+        ]:
+            colour = (80, 80, 80) if not active else (60, 120, 60)
+            pygame.draw.rect(self.screen, colour, rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_checkmate_popup(self, winner):
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+        msg = self.font_large.render(f"{winner.capitalize()} wins!", True, (255, 215, 0))
+        self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - msg.get_height() // 2))
 
     def draw(self, grid, highlights=[]):
         self.screen.blit(self.board_image, (0, 0))
