@@ -4,7 +4,7 @@ from ui import Renderer
 from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
-from ui.chess_logic import is_legal_move, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves
+from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves
 
 def select_piece(square, piece, board, piece_moves):
     row, col = square
@@ -57,6 +57,22 @@ def main():
                     # second click — move if the square is a legal move
                     if square in highlights:
                         board.move_piece(selected_square, square)
+                        
+                        total_legal_moves = []
+                        for row in range(8):
+                            for col in range(8):
+                                piece = board.grid[row][col]
+                                if piece is not None and piece.startswith(board.turn):
+                                    _, legal_moves = select_piece((row, col), piece, board, piece_moves)
+                                    total_legal_moves += legal_moves
+                        king_pos = board.white_king if board.turn == "white" else board.black_king
+                        if not total_legal_moves and in_check(board.grid, board.turn, king_pos):
+                            if board.turn == "white":
+                                print("checkmate black wins")
+                            else:
+                                print("checkmate white wins")
+                        elif not total_legal_moves:
+                            print("stalemate")
                         selected_square = None
                         highlights = []
                     else:
