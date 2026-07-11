@@ -39,6 +39,7 @@ class Board:
         fr, fc = from_sq
         tr, tc = to_sq
         moving_piece = self.grid[fr][fc]
+        destination_empty = self.grid[tr][tc] is None
         self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
         self.turn = "black" if self.turn == "white" else "white"
@@ -48,7 +49,7 @@ class Board:
         if moving_piece.split("_")[1] == "pawn" and abs(tr - fr) == 2:
             self.en_passant_ts = (tr, tc)
 
-        if moving_piece.split("_")[1] == "pawn" and fc != tc and prev_en_passant_ts is not None and tc == prev_en_passant_ts[1]:
+        if moving_piece.split("_")[1] == "pawn" and fc != tc and destination_empty and prev_en_passant_ts is not None:
             self.grid[prev_en_passant_ts[0]][prev_en_passant_ts[1]] = None
         
         #tracks kings

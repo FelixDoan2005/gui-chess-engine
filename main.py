@@ -5,6 +5,7 @@ from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
 from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves
+from engine.ai import evaluate
 
 CHECKMATE_DISPLAY_MS = 5000
 
@@ -80,6 +81,7 @@ def main():
                     else:
                         if square in highlights:
                             board.move_piece(selected_square, square)
+                            print(evaluate(board))
 
                             king_pos = board.white_king if board.turn == "white" else board.black_king
                             total_legal_moves = get_all_legal_moves(board, piece_moves)
@@ -107,7 +109,7 @@ def main():
         elif state == "checkmate":
             renderer.draw(board.grid, [])
             if winner == "stalemate":
-                renderer.draw_checkmate_popup("Stalemate — draw")
+                renderer.draw_checkmate_popup("Stalemate")
             else:
                 renderer.draw_checkmate_popup(winner)
             if pygame.time.get_ticks() - checkmate_time >= CHECKMATE_DISPLAY_MS:
