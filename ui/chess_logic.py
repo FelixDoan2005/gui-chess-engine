@@ -99,18 +99,19 @@ def pawn_moves(row, col, grid, colour, en_passant_ts):
     two_steps = row + direction * 2
 
     square_in_front = grid[one_step][col]
-    square_two_ahead = grid[two_steps][col]
 
     # move forward 1
     if square_in_front == None:
         moves.append((one_step, col))
 
         # move forward 2 from starting row
-        if row == 6 and colour == 'white' and square_two_ahead == None:
-            moves.append((two_steps, col))
+        if row == 6 and colour == 'white':
+            if grid[two_steps][col] == None:
+                moves.append((two_steps, col))
 
-        if row == 1 and colour == 'black' and square_two_ahead == None:
-            moves.append((two_steps, col))
+        if row == 1 and colour == 'black':
+            if grid[two_steps][col] == None:
+                moves.append((two_steps, col))
 
     #captures
     if col > 0 and grid[one_step][col-1] is not None and not grid[one_step][col-1].startswith(colour):
