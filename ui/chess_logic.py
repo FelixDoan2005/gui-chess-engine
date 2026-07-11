@@ -39,6 +39,7 @@ class Board:
         fr, fc = from_sq
         tr, tc = to_sq
         moving_piece = self.grid[fr][fc]
+        destination_empty = self.grid[tr][tc] is None
         self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
         self.turn = "black" if self.turn == "white" else "white"
@@ -48,7 +49,7 @@ class Board:
         if moving_piece.split("_")[1] == "pawn" and abs(tr - fr) == 2:
             self.en_passant_ts = (tr, tc)
 
-        if moving_piece.split("_")[1] == "pawn" and fc != tc and prev_en_passant_ts is not None:
+        if moving_piece.split("_")[1] == "pawn" and fc != tc and destination_empty and prev_en_passant_ts is not None:
             self.grid[prev_en_passant_ts[0]][prev_en_passant_ts[1]] = None
         
         #tracks kings
@@ -98,18 +99,19 @@ def pawn_moves(row, col, grid, colour, en_passant_ts):
     two_steps = row + direction * 2
 
     square_in_front = grid[one_step][col]
-    square_two_ahead = grid[two_steps][col]
 
     # move forward 1
     if square_in_front == None:
         moves.append((one_step, col))
 
         # move forward 2 from starting row
-        if row == 6 and colour == 'white' and square_two_ahead == None:
-            moves.append((two_steps, col))
+        if row == 6 and colour == 'white':
+            if grid[two_steps][col] == None:
+                moves.append((two_steps, col))
 
-        if row == 1 and colour == 'black' and square_two_ahead == None:
-            moves.append((two_steps, col))
+        if row == 1 and colour == 'black':
+            if grid[two_steps][col] == None:
+                moves.append((two_steps, col))
 
     #captures
     if col > 0 and grid[one_step][col-1] is not None and not grid[one_step][col-1].startswith(colour):
