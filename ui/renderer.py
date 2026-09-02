@@ -22,6 +22,15 @@ class Renderer:
         self.pvp_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
         self.pve_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
 
+        self.promotion_pieces = ["queen", "rook", "bishop", "knight"]
+        promo_total_w = SQUARE_SIZE * len(self.promotion_pieces)
+        promo_x = WIDTH // 2 - promo_total_w // 2
+        promo_y = HEIGHT // 2 - SQUARE_SIZE // 2
+        self.promotion_rects = {
+            kind: pygame.Rect(promo_x + i * SQUARE_SIZE, promo_y, SQUARE_SIZE, SQUARE_SIZE)
+            for i, kind in enumerate(self.promotion_pieces)
+        }
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
@@ -42,6 +51,15 @@ class Renderer:
         self.screen.blit(overlay, (0, 0))
         msg = self.font_large.render(f"{winner.capitalize()} wins!", True, (255, 215, 0))
         self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - msg.get_height() // 2))
+
+    def draw_promotion_picker(self, colour):
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+
+        for kind, rect in self.promotion_rects.items():
+            pygame.draw.rect(self.screen, (60, 60, 60), rect, border_radius=8)
+            self.screen.blit(self.pieces[f"{colour}_{kind}"], rect.topleft)
 
     def draw(self, grid, highlights=[]):
         self.screen.blit(self.board_image, (0, 0))
