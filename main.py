@@ -4,34 +4,12 @@ from ui import Renderer
 from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
-from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves
+from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves
 from engine.ai import evaluate
 
 CHECKMATE_DISPLAY_MS = 5000
 
-def select_piece(square, piece, board, piece_moves):
-    row, col = square
-    colour = piece.split("_")[0]
-    current_piece = piece.split("_")[1]
-    if current_piece == "king":
-        highlights = piece_moves[current_piece](row, col, board.grid, colour, board)
-    elif current_piece == "pawn":
-        highlights = piece_moves[current_piece](row, col, board.grid, colour, board.en_passant_ts)
-    else:
-        highlights = piece_moves[current_piece](row, col, board.grid, colour)
-    king_pos = board.white_king if colour == "white" else board.black_king
-    legal_highlights = [move for move in highlights if is_legal_move(board.grid, colour, square, move, king_pos)]
-    return square, legal_highlights
 
-def get_all_legal_moves(board, piece_moves):
-    total = []
-    for row in range(8):
-        for col in range(8):
-            piece = board.grid[row][col]
-            if piece is not None and piece.startswith(board.turn):
-                _, legal_moves = select_piece((row, col), piece, board, piece_moves)
-                total += legal_moves
-    return total
 
 def check_game_end(board, piece_moves):
     king_pos = board.white_king if board.turn == "white" else board.black_king

@@ -364,3 +364,26 @@ def is_legal_move(grid, colour, from_sq, to_sq, king_pos):
 
         return result
 
+def select_piece(square, piece, board, piece_moves):
+    row, col = square
+    colour = piece.split("_")[0]
+    current_piece = piece.split("_")[1]
+    if current_piece == "king":
+        highlights = piece_moves[current_piece](row, col, board.grid, colour, board)
+    elif current_piece == "pawn":
+        highlights = piece_moves[current_piece](row, col, board.grid, colour, board.en_passant_ts)
+    else:
+        highlights = piece_moves[current_piece](row, col, board.grid, colour)
+    king_pos = board.white_king if colour == "white" else board.black_king
+    legal_highlights = [move for move in highlights if is_legal_move(board.grid, colour, square, move, king_pos)]
+    return square, legal_highlights
+
+def get_all_legal_moves(board, piece_moves):
+    total = []
+    for row in range(8):
+        for col in range(8):
+            piece = board.grid[row][col]
+            if piece is not None and piece.startswith(board.turn):
+                _, legal_moves = select_piece((row, col), piece, board, piece_moves)
+                total += [((row,col), move) for move in legal_moves]
+    return total
