@@ -59,7 +59,6 @@ def main():
     checkmate_time = None
     mode = None
     player_colour = None
-    difficulty = None
     depth = None
     ai = None
     engine_thread = None
@@ -103,7 +102,6 @@ def main():
             if click:
                 for level, rect in renderer.difficulty_rects.items():
                     if rect.collidepoint(click):
-                        difficulty = level
                         depth = DIFFICULTY_DEPTH[level]
                         ai = AI()
                         board = Board()

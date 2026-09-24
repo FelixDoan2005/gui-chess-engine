@@ -35,12 +35,12 @@ class Renderer:
         self.black_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
 
         DIFF_BTN, DIFF_GAP = 60, 10
-        diff_total_w = DIFF_BTN * 10 + DIFF_GAP * 9
+        diff_total_w = DIFF_BTN * 5 + DIFF_GAP * 4
         diff_x = WIDTH // 2 - diff_total_w // 2
         diff_y = HEIGHT // 2 - DIFF_BTN // 2
         self.difficulty_rects = {
             level: pygame.Rect(diff_x + (level - 1) * (DIFF_BTN + DIFF_GAP), diff_y, DIFF_BTN, DIFF_BTN)
-            for level in range(1, 11)
+            for level in range(1, 6)
         }
 
     def draw_menu(self):
