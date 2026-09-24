@@ -31,19 +31,57 @@ class Renderer:
             for i, kind in enumerate(self.promotion_pieces)
         }
 
+        self.white_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
+        self.black_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
+
+        DIFF_BTN, DIFF_GAP = 60, 10
+        diff_total_w = DIFF_BTN * 10 + DIFF_GAP * 9
+        diff_x = WIDTH // 2 - diff_total_w // 2
+        diff_y = HEIGHT // 2 - DIFF_BTN // 2
+        self.difficulty_rects = {
+            level: pygame.Rect(diff_x + (level - 1) * (DIFF_BTN + DIFF_GAP), diff_y, DIFF_BTN, DIFF_BTN)
+            for level in range(1, 11)
+        }
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
 
-        for rect, label, active in [
-            (self.pvp_rect, "Player vs Player", True),
-            (self.pve_rect, "Player vs Engine", False),
+        for rect, label in [
+            (self.pvp_rect, "Player vs Player"),
+            (self.pve_rect, "Player vs Engine"),
         ]:
-            colour = (80, 80, 80) if not active else (60, 120, 60)
-            pygame.draw.rect(self.screen, colour, rect, border_radius=8)
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_colour_select(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Choose Your Colour", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        for rect, label in [
+            (self.white_rect, "Play as White"),
+            (self.black_rect, "Play as Black"),
+        ]:
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_difficulty_select(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Choose Difficulty", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        for level, rect in self.difficulty_rects.items():
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(str(level), True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_thinking(self):
+        text = self.font_med.render("Engine is thinking...", True, (255, 255, 0))
+        self.screen.blit(text, (10, 10))
 
     def draw_checkmate_popup(self, winner):
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)

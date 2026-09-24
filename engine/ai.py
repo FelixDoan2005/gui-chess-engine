@@ -2,6 +2,19 @@ from ui.chess_logic import get_all_legal_moves, select_piece, in_check
 
 CHECKMATE_SCORE = 999999
 
+# Difficulty level (1-10) -> search depth. Capped at 5 for now since this
+# board representation has no move ordering, so deeper searches get slow
+# fast (depth 5 ~1.7s, depth 6+ multiple seconds/minutes on the starting
+# position). Levels will later also toggle which features the AI uses,
+# not just depth.
+DIFFICULTY_DEPTH = {
+    1: 1, 2: 1,
+    3: 2, 4: 2,
+    5: 3, 6: 3,
+    7: 4, 8: 4,
+    9: 5, 10: 5,
+}
+
 def evaluate(board):
     pieces = {
         "pawn": 1,
@@ -25,12 +38,6 @@ def evaluate(board):
                     score -= value
 
     return score
-
-
-# NOTE: negamax needs get_all_legal_moves(board, piece_moves), which currently
-# lives in main.py. Since main.py shouldn't really be imported as a module,
-# consider moving get_all_legal_moves (and select_piece) into chess_logic.py
-# so both main.py and engine/ai.py can import it from there.
 
 def save_state(board):
     grid_copy = []

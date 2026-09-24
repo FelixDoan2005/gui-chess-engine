@@ -1,3 +1,5 @@
+import threading
+
 import pygame
 from ui import create_window
 from ui import Renderer
@@ -5,7 +7,7 @@ from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
 from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves
-from engine.ai import evaluate
+from engine.ai import evaluate, AI, DIFFICULTY_DEPTH, save_state, restore_state
 
 CHECKMATE_DISPLAY_MS = 5000
 
@@ -20,6 +22,17 @@ def check_game_end(board, piece_moves):
     if in_check(board.grid, board.turn, king_pos):
         return "black" if board.turn == "white" else "white"
     return "stalemate"
+
+def make_move_and_check_promotion(board, from_sq, to_sq):
+    board.move_piece(from_sq, to_sq)
+    moved_piece = board.get_piece(*to_sq)
+    row = to_sq[0]
+    if moved_piece is not None and moved_piece.endswith("pawn") and row in (0, 7):
+        return moved_piece.split("_")[0]
+    return None
+
+def run_engine_search(ai, search_board, piece_moves, depth, result):
+    result["move"] = ai.choose_move(search_board, piece_moves, depth=depth)
 
 def main():
     screen = create_window()
@@ -44,6 +57,13 @@ def main():
     promotion_colour = None
     winner = None
     checkmate_time = None
+    mode = None
+    player_colour = None
+    difficulty = None
+    depth = None
+    ai = None
+    engine_thread = None
+    engine_result = None
 
     running = True
     while running:
@@ -55,15 +75,78 @@ def main():
             renderer.draw_menu()
             if click:
                 if renderer.pvp_rect.collidepoint(click):
+                    mode = "pvp"
+                    player_colour = None
+                    ai = None
                     board = Board()
                     highlights = []
                     selected_square = None
                     promotion_square = None
                     promotion_colour = None
                     state = "playing"
+                elif renderer.pve_rect.collidepoint(click):
+                    mode = "pve"
+                    state = "colour_select"
+
+        elif state == "colour_select":
+            renderer.draw_colour_select()
+            if click:
+                if renderer.white_rect.collidepoint(click):
+                    player_colour = "white"
+                    state = "difficulty_select"
+                elif renderer.black_rect.collidepoint(click):
+                    player_colour = "black"
+                    state = "difficulty_select"
+
+        elif state == "difficulty_select":
+            renderer.draw_difficulty_select()
+            if click:
+                for level, rect in renderer.difficulty_rects.items():
+                    if rect.collidepoint(click):
+                        difficulty = level
+                        depth = DIFFICULTY_DEPTH[level]
+                        ai = AI()
+                        board = Board()
+                        highlights = []
+                        selected_square = None
+                        promotion_square = None
+                        promotion_colour = None
+                        engine_thread = None
+                        engine_result = None
+                        state = "playing"
+                        break
 
         elif state == "playing":
-            if click:
+            if mode == "pve" and board.turn != player_colour:
+                if engine_thread is None:
+                    search_board = Board()
+                    restore_state(search_board, save_state(board))
+                    engine_result = {}
+                    engine_thread = threading.Thread(
+                        target=run_engine_search,
+                        args=(ai, search_board, piece_moves, depth, engine_result),
+                        daemon=True,
+                    )
+                    engine_thread.start()
+                elif not engine_thread.is_alive():
+                    move = engine_result.get("move")
+                    engine_thread = None
+                    if move is not None:
+                        engine_from, engine_to = move
+                        promo_colour = make_move_and_check_promotion(board, engine_from, engine_to)
+                        if promo_colour is not None:
+                            row, col = engine_to
+                            board.grid[row][col] = f"{promo_colour}_queen"
+
+                        result = check_game_end(board, piece_moves)
+                        if result:
+                            winner = result
+                            checkmate_time = pygame.time.get_ticks()
+                            state = "checkmate"
+
+                selected_square = None
+                highlights = []
+            elif click:
                 square = pixel_to_square(*click)
                 if square:
                     piece = board.get_piece(*square)
@@ -72,15 +155,12 @@ def main():
                         selected_square, highlights = select_piece(square, piece, board, piece_moves)
                     else:
                         if square in highlights:
-                            board.move_piece(selected_square, square)
+                            promo_colour = make_move_and_check_promotion(board, selected_square, square)
                             print(evaluate(board))
 
-                            moved_piece = board.get_piece(*square)
-                            row = square[0]
-
-                            if moved_piece is not None and moved_piece.endswith("pawn") and row in (0, 7):
+                            if promo_colour is not None:
                                 promotion_square = square
-                                promotion_colour = moved_piece.split("_")[0]
+                                promotion_colour = promo_colour
                                 state = "promotion"
                             else:
                                 result = check_game_end(board, piece_moves)
@@ -99,6 +179,8 @@ def main():
                                 highlights = []
 
             renderer.draw(board.grid, highlights)
+            if engine_thread is not None:
+                renderer.draw_thinking()
 
         elif state == "promotion":
             renderer.draw(board.grid, [])
