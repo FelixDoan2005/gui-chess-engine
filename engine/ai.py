@@ -1,4 +1,4 @@
-from ui.chess_logic import get_all_legal_moves, select_piece, in_check
+from ui.chess_logic import get_all_legal_moves, select_piece, in_check, knight_moves, bishop_moves, rook_moves, queen_moves
 
 CHECKMATE_SCORE = 999999
 
@@ -125,6 +125,73 @@ def evaluate(board):
                 else:
                     score -= total_gain
 
+    return score + mobility(board)
+
+
+# Points per safe move. Starting values, not from a reference -- tune them.
+# Queen is lowest per move because it has so many moves it would otherwise
+# dominate the score.
+MOBILITY_WEIGHTS = {
+    "knight": 0.04,
+    "bishop": 0.05,
+    "rook": 0.02,
+    "queen": 0.01,
+}
+
+MOBILITY_GENERATORS = {
+    "knight": knight_moves,
+    "bishop": bishop_moves,
+    "rook": rook_moves,
+    "queen": queen_moves,
+}
+
+
+def pawn_attacks(grid, colour):
+    attacked = set()
+    if colour == "white":
+        direction = -1
+    else:
+        direction = 1
+    for r in range(8):
+        for c in range(8):
+            if grid[r][c] == f"{colour}_pawn":
+                attack_row = r + direction
+                if 0 <= attack_row <= 7:
+                    for attack_col in (c - 1, c + 1):
+                        if 0 <= attack_col <= 7:
+                            attacked.add((attack_row, attack_col))
+    return attacked
+
+
+def mobility(board):
+    grid = board.grid
+    unsafe = {
+        "white": pawn_attacks(grid, "black"),
+        "black": pawn_attacks(grid, "white"),
+    }
+
+    score = 0
+    for r in range(8):
+        for c in range(8):
+            piece = grid[r][c]
+            if piece is None:
+                continue
+            colour, kind = piece.split("_")
+            if kind not in MOBILITY_GENERATORS:
+                continue
+
+            moves = MOBILITY_GENERATORS[kind](r, c, grid, colour)
+            safe_moves = 0
+            for square in moves:
+                if square not in unsafe[colour]:
+                    safe_moves += 1
+            value = safe_moves * MOBILITY_WEIGHTS[kind]
+
+            if colour == "white":
+                score += value
+            else:
+                score -= value
+
     return score
 
 
@@ -172,6 +239,14 @@ def restore_state(board, state):
     board.black_rook_queenside_moved = state["black_rook_queenside_moved"]
 
 
+def make_move(board, from_sq, to_sq):
+    board.move_piece(from_sq, to_sq)
+    row, col = to_sq
+    piece = board.grid[row][col]
+    if piece.endswith("pawn") and row in (0, 7):
+        board.grid[row][col] = piece.split("_")[0] + "_queen"
+
+
 def negamax(board, piece_moves, depth, alpha, beta):
     if depth == 0:
         if board.turn == "white":
@@ -188,7 +263,7 @@ def negamax(board, piece_moves, depth, alpha, beta):
         return 0
     for (from_sq, to_sq) in order_moves(board, moves):
         state = save_state(board)
-        board.move_piece(from_sq, to_sq)
+        make_move(board, from_sq, to_sq)
         score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
         restore_state(board, state)
 
@@ -208,7 +283,7 @@ class AI:
         best_move = None
         for (from_sq, to_sq) in order_moves(board, moves):
             state = save_state(board)
-            board.move_piece(from_sq, to_sq)
+            make_move(board, from_sq, to_sq)
             score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
             restore_state(board, state)
             if score > alpha:
