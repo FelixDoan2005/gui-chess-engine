@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from engine.ai import AI, CHECKMATE_SCORE, negamax
+from engine.ai import AI, CHECKMATE_SCORE, negamax, pawn_files
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check
 
 
@@ -53,6 +53,15 @@ def test_black_promotion_does_not_crash_search():
     board = empty_board((7, 7), (0, 4), "black")
     board.grid[6][0] = "black_pawn"
     assert AI().choose_move(board, piece_moves, 3) == ((6, 0), (7, 0))
+
+def test_pawn_files_ignores_other_colour_and_other_pieces():
+    grid = [[None] * 8 for _ in range(8)]
+    grid[6][4] = "white_pawn"
+    grid[1][4] = "black_pawn"
+    grid[5][2] = "white_knight"
+    assert pawn_files(grid, "white") == {4: [6]}
+
+
 
 
 if __name__ == "__main__":

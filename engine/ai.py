@@ -125,7 +125,7 @@ def evaluate(board):
                 else:
                     score -= total_gain
 
-    return score + mobility(board)
+    return score + mobility(board) + pawn_structure(board)
 
 
 # Points per safe move. Starting values, not from a reference -- tune them.
@@ -191,6 +191,72 @@ def mobility(board):
                 score += value
             else:
                 score -= value
+
+    return score
+
+
+# Pawn structure. Starting values, not from a reference -- tune them.
+DOUBLED_PAWN_PENALTY = 0.2
+ISOLATED_PAWN_PENALTY = 0.2
+PASSED_PAWN_BONUS = 0.3
+
+
+def pawn_files(grid, colour):
+    column_with_pawns = {}
+    for r in range(8):
+        for c in range(8):
+            piece = grid[r][c]
+            if piece is None:
+                continue
+            piece_colour, kind = piece.split("_")
+            if kind == "pawn" and piece_colour == colour:
+                if c not in column_with_pawns:
+                    column_with_pawns[c] = [r]
+                else:
+                    column_with_pawns[c].append(r)
+    return column_with_pawns
+
+
+
+def is_passed(row, col, colour, enemy_files):
+    for check_col in (col - 1, col, col + 1):
+        for enemy_row in enemy_files.get(check_col, []):
+            if colour == "white" and enemy_row < row:
+                return False
+            if colour == "black" and enemy_row > row:
+                return False
+    return True
+
+
+def pawn_structure(board):
+    # Once filled in, add `+ pawn_structure(board)` to evaluate()'s return.
+    score = 0
+
+    for colour in ("white", "black"):
+        if colour == "white":
+            enemy = "black"
+        else:
+            enemy = "white"
+        own_files = pawn_files(board.grid, colour)
+        enemy_files = pawn_files(board.grid, enemy)
+
+        side_score = 0
+
+        for col, rows in own_files.items():
+            if len(rows) > 1:
+                side_score -= DOUBLED_PAWN_PENALTY * (len(rows) - 1)
+
+            if col - 1 not in own_files and col + 1 not in own_files:
+                side_score -= ISOLATED_PAWN_PENALTY * len(rows)
+
+            for row in rows:
+                if is_passed(row, col, colour, enemy_files):
+                    side_score += PASSED_PAWN_BONUS
+
+        if colour == "white":
+            score += side_score
+        else:
+            score -= side_score
 
     return score
 

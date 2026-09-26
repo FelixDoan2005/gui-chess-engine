@@ -152,3 +152,26 @@ if __name__ == "__main__":
         for _, _, _, reason in at_depth:
             endings[reason] = endings.get(reason, 0) + 1
         print(f"  Games ended by: {endings}")
+
+# 600/600 done
+# Finished in 2019.6s
+
+# Score = wins + half of draws, for the MOBILITY engine. 50% = no difference.
+
+# Depth 2
+#   Mobility as White (100)  29 W /  51 D /  20 L   score  54.5%
+#   Mobility as Black (100)  22 W /  56 D /  22 L   score  50.0%
+#   Total (200)             51 W / 107 D /  42 L   score  52.2%
+#   Games ended by: {'repetition': 107, 'checkmate': 93}
+
+# Depth 3
+#   Mobility as White (100)  23 W /  56 D /  21 L   score  51.0%
+#   Mobility as Black (100)  19 W /  64 D /  17 L   score  51.0%
+#   Total (200)             42 W / 120 D /  38 L   score  51.0%
+#   Games ended by: {'repetition': 119, 'checkmate': 80, 'stalemate': 1}
+
+# Depth 4
+#   Mobility as White (100)  19 W /  70 D /  11 L   score  54.0%
+#   Mobility as Black (100)  14 W /  76 D /  10 L   score  52.0%
+#   Total (200)             33 W / 146 D /  21 L   score  53.0%
+#   Games ended by: {'repetition': 146, 'checkmate': 54}
