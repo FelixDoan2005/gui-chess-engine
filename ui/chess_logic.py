@@ -31,6 +31,7 @@ class Board:
         self.black_rook_kingside_moved = False  
         self.black_rook_queenside_moved = False
         self.en_passant_ts = None
+        self.ply = 0
 
     def get_piece(self, row, col):
         return self.grid[row][col]
@@ -43,6 +44,7 @@ class Board:
         self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
         self.turn = "black" if self.turn == "white" else "white"
+        self.ply += 1
         prev_en_passant_ts = self.en_passant_ts
         self.en_passant_ts = None
 

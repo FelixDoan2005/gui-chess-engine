@@ -125,7 +125,7 @@ def evaluate(board):
                 else:
                     score -= total_gain
 
-    return score + mobility(board) + pawn_structure(board)
+    return score + mobility(board) + pawn_structure(board) + bishop_pair(board)
 
 
 # Points per safe move. Starting values, not from a reference -- tune them.
@@ -261,6 +261,57 @@ def pawn_structure(board):
     return score
 
 
+# Values follow Larry Kaufman's 2021 figures (+0.3 middlegame, +0.4 in
+# between, +0.5 endgame), mapped onto opening / middlegame / endgame.
+BISHOP_PAIR_BONUS = {
+    "opening": 0.3,
+    "middlegame": 0.4,
+    "endgame": 0.5,
+}
+
+OPENING_PLY_LIMIT = 30  # 15 full moves = 30 plies (one ply = one side's move)
+
+# Phase weights from the Fruit engine (chessprogramming.org/Tapered_Eval):
+# 24 in total at the start of the game, falling as pieces come off.
+PHASE_WEIGHTS = {"knight": 1, "bishop": 1, "rook": 2, "queen": 4}
+ENDGAME_PHASE_LIMIT = 8  # my choice: roughly a rook and a minor piece each
+
+
+def game_phase(board):
+    remaining = 0
+    for row in board.grid:
+        for piece in row:
+            if piece is not None:
+                kind = piece.split("_")[1]
+                remaining += PHASE_WEIGHTS.get(kind, 0)
+
+    if remaining <= ENDGAME_PHASE_LIMIT:
+        return "endgame"
+    if board.ply < OPENING_PLY_LIMIT:
+        return "opening"
+    return "middlegame"
+
+
+def bishop_pair(board):
+    white_bishops = 0
+    black_bishops = 0
+    for row in board.grid:
+        for piece in row:
+            if piece == "white_bishop":
+                white_bishops += 1
+            elif piece == "black_bishop":
+                black_bishops += 1
+
+    bonus = BISHOP_PAIR_BONUS[game_phase(board)]
+
+    score = 0
+    if white_bishops >= 2:
+        score += bonus
+    if black_bishops >= 2:
+        score -= bonus
+    return score
+
+
 def order_moves(board, moves):
     def capture_value(move):
         _, to_sq = move
@@ -288,6 +339,7 @@ def save_state(board):
         "black_king_moved": board.black_king_moved,
         "black_rook_kingside_moved": board.black_rook_kingside_moved,
         "black_rook_queenside_moved": board.black_rook_queenside_moved,
+        "ply": board.ply,
     }
 
 
@@ -303,6 +355,7 @@ def restore_state(board, state):
     board.black_king_moved = state["black_king_moved"]
     board.black_rook_kingside_moved = state["black_rook_kingside_moved"]
     board.black_rook_queenside_moved = state["black_rook_queenside_moved"]
+    board.ply = state["ply"]
 
 
 def make_move(board, from_sq, to_sq):

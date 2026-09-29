@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from engine.ai import AI, CHECKMATE_SCORE, negamax, pawn_files
+from engine.ai import AI, CHECKMATE_SCORE, negamax, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, game_phase
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check
 
 
@@ -60,6 +60,59 @@ def test_pawn_files_ignores_other_colour_and_other_pieces():
     grid[1][4] = "black_pawn"
     grid[5][2] = "white_knight"
     assert pawn_files(grid, "white") == {4: [6]}
+
+
+def test_bishop_pair_cancels_out_when_both_sides_have_it():
+    assert bishop_pair(Board()) == 0
+
+
+def test_bishop_pair_bonus_for_white_only():
+    board = empty_board((7, 4), (0, 4), "white")
+    board.grid[7][2] = "white_bishop"
+    board.grid[7][5] = "white_bishop"
+    board.grid[0][2] = "black_bishop"
+    board.grid[0][1] = "black_knight"
+    assert bishop_pair(board) == BISHOP_PAIR_BONUS["endgame"]
+
+
+def test_bishop_pair_bonus_for_black_only():
+    board = empty_board((7, 4), (0, 4), "black")
+    board.grid[0][2] = "black_bishop"
+    board.grid[0][5] = "black_bishop"
+    assert bishop_pair(board) == -BISHOP_PAIR_BONUS["endgame"]
+
+
+def test_game_phase_opening_at_start():
+    assert game_phase(Board()) == "opening"
+
+
+def test_game_phase_middlegame_after_move_15_with_queens():
+    board = Board()
+    board.ply = 30
+    assert game_phase(board) == "middlegame"
+
+
+def test_game_phase_endgame_when_little_material_left():
+    board = empty_board((7, 4), (0, 4), "white")
+    board.grid[7][0] = "white_rook"     # 2
+    board.grid[7][1] = "white_knight"   # 1
+    board.grid[0][0] = "black_rook"     # 2
+    board.grid[0][2] = "black_bishop"   # 1  -> 6 total, <= 8
+    assert game_phase(board) == "endgame"
+
+
+def test_game_phase_queens_traded_early_is_not_endgame():
+    board = Board()
+    board.grid[7][3] = None   # white queen
+    board.grid[0][3] = None   # black queen -> 24 - 8 = 16 left, > 8
+    assert game_phase(board) == "opening"
+
+
+def test_move_piece_counts_plies():
+    board = Board()
+    board.move_piece((6, 4), (4, 4))
+    board.move_piece((1, 4), (3, 4))
+    assert board.ply == 2
 
 
 
