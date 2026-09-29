@@ -1,4 +1,4 @@
-from ui.chess_logic import get_all_legal_moves, select_piece, in_check, knight_moves, bishop_moves, rook_moves, queen_moves
+from ui.chess_logic import Board, get_all_legal_moves, select_piece, in_check, insufficient_material, knight_moves, bishop_moves, rook_moves, queen_moves
 
 CHECKMATE_SCORE = 999999
 
@@ -340,6 +340,8 @@ def save_state(board):
         "black_rook_kingside_moved": board.black_rook_kingside_moved,
         "black_rook_queenside_moved": board.black_rook_queenside_moved,
         "ply": board.ply,
+        "halfmove_clock": board.halfmove_clock,
+        "history_len": len(board.history),
     }
 
 
@@ -356,6 +358,30 @@ def restore_state(board, state):
     board.black_rook_kingside_moved = state["black_rook_kingside_moved"]
     board.black_rook_queenside_moved = state["black_rook_queenside_moved"]
     board.ply = state["ply"]
+    board.halfmove_clock = state["halfmove_clock"]
+    # Undo the positions move_piece added to the history since save_state.
+    while len(board.history) > state["history_len"]:
+        key = board.history.pop()
+        board.position_counts[key] -= 1
+
+
+def clone_board(board):
+    copy = Board()
+    restore_state(copy, save_state(board))
+    copy.history = list(board.history)
+    copy.position_counts = dict(board.position_counts)
+    return copy
+
+
+def is_draw_in_search(board):
+    # Stricter than the real rules on purpose: a position that has occurred
+    # even once before is scored as a draw, so the search sees repetition
+    # coming within a few plies instead of waiting for a third occurrence.
+    if board.position_counts[board.history[-1]] >= 2:
+        return True
+    if board.halfmove_clock >= 100:
+        return True
+    return insufficient_material(board.grid)
 
 
 def make_move(board, from_sq, to_sq):
@@ -367,6 +393,9 @@ def make_move(board, from_sq, to_sq):
 
 
 def negamax(board, piece_moves, depth, alpha, beta):
+    if is_draw_in_search(board):
+        return 0
+
     if depth == 0:
         if board.turn == "white":
             return evaluate(board)

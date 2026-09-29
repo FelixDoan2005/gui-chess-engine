@@ -32,15 +32,31 @@ class Board:
         self.black_rook_queenside_moved = False
         self.en_passant_ts = None
         self.ply = 0
+        self.halfmove_clock = 0  # plies since the last capture or pawn move (50-move rule)
+        self.history = [self.position_key()]
+        self.position_counts = {self.history[0]: 1}
 
     def get_piece(self, row, col):
         return self.grid[row][col]
+
+    def position_key(self):
+        return (
+            tuple(tuple(row) for row in self.grid),
+            self.turn,
+            self.en_passant_ts,
+            self.white_king_moved, self.white_rook_kingside_moved, self.white_rook_queenside_moved,
+            self.black_king_moved, self.black_rook_kingside_moved, self.black_rook_queenside_moved,
+        )
 
     def move_piece(self, from_sq, to_sq):
         fr, fc = from_sq
         tr, tc = to_sq
         moving_piece = self.grid[fr][fc]
         destination_empty = self.grid[tr][tc] is None
+        if moving_piece.endswith("pawn") or not destination_empty:
+            self.halfmove_clock = 0
+        else:
+            self.halfmove_clock += 1
         self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
         self.turn = "black" if self.turn == "white" else "white"
@@ -89,6 +105,42 @@ class Board:
             elif to_sq == (0,2):
                 self.grid[0][3] = "black_rook"
                 self.grid[0][0] = None
+
+        key = self.position_key()
+        self.history.append(key)
+        self.position_counts[key] = self.position_counts.get(key, 0) + 1
+
+
+def insufficient_material(grid):
+    minors = []  # (kind, square colour) of every knight/bishop on the board
+    for r in range(8):
+        for c in range(8):
+            piece = grid[r][c]
+            if piece is None:
+                continue
+            kind = piece.split("_")[1]
+            if kind == "king":
+                continue
+            if kind in ("pawn", "rook", "queen"):
+                return False
+            minors.append((kind, (r + c) % 2))
+
+    if len(minors) <= 1:
+        return True  # K vs K, or K + one knight/bishop vs K
+    # Bishops that all stand on the same colour squares can never give mate.
+    all_bishops = all(kind == "bishop" for kind, _ in minors)
+    same_colour = len({square_colour for _, square_colour in minors}) == 1
+    return all_bishops and same_colour
+
+
+def draw_reason(board):
+    if board.position_counts[board.history[-1]] >= 3:
+        return "threefold repetition"
+    if board.halfmove_clock >= 100:
+        return "50-move rule"
+    if insufficient_material(board.grid):
+        return "insufficient material"
+    return None
 
 def pawn_moves(row, col, grid, colour, en_passant_ts):
     moves = []

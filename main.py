@@ -6,22 +6,26 @@ from ui import Renderer
 from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
-from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves
-from engine.ai import evaluate, AI, DIFFICULTY_DEPTH, save_state, restore_state
+from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves, draw_reason
+from engine.ai import evaluate, AI, DIFFICULTY_DEPTH, clone_board
 
-CHECKMATE_DISPLAY_MS = 5000
+GAME_OVER_DISPLAY_MS = 5000
 
 
 
 def check_game_end(board, piece_moves):
-    king_pos = board.white_king if board.turn == "white" else board.black_king
-    total_legal_moves = get_all_legal_moves(board, piece_moves)
+    # Returns (title, reason) for the game-over popup, or None if play continues.
+    if not get_all_legal_moves(board, piece_moves):
+        king_pos = board.white_king if board.turn == "white" else board.black_king
+        if in_check(board.grid, board.turn, king_pos):
+            winner = "Black" if board.turn == "white" else "White"
+            return f"{winner} wins!", "by checkmate"
+        return "Draw", "by stalemate"
 
-    if total_legal_moves:
-        return None
-    if in_check(board.grid, board.turn, king_pos):
-        return "black" if board.turn == "white" else "white"
-    return "stalemate"
+    reason = draw_reason(board)
+    if reason:
+        return "Draw", f"by {reason}"
+    return None
 
 def make_move_and_check_promotion(board, from_sq, to_sq):
     board.move_piece(from_sq, to_sq)
@@ -55,8 +59,8 @@ def main():
     selected_square = None
     promotion_square = None
     promotion_colour = None
-    winner = None
-    checkmate_time = None
+    game_result = None
+    game_over_time = None
     mode = None
     player_colour = None
     depth = None
@@ -117,8 +121,7 @@ def main():
         elif state == "playing":
             if mode == "pve" and board.turn != player_colour:
                 if engine_thread is None:
-                    search_board = Board()
-                    restore_state(search_board, save_state(board))
+                    search_board = clone_board(board)
                     engine_result = {}
                     engine_thread = threading.Thread(
                         target=run_engine_search,
@@ -138,9 +141,9 @@ def main():
 
                         result = check_game_end(board, piece_moves)
                         if result:
-                            winner = result
-                            checkmate_time = pygame.time.get_ticks()
-                            state = "checkmate"
+                            game_result = result
+                            game_over_time = pygame.time.get_ticks()
+                            state = "game_over"
 
                 selected_square = None
                 highlights = []
@@ -163,9 +166,9 @@ def main():
                             else:
                                 result = check_game_end(board, piece_moves)
                                 if result:
-                                    winner = result
-                                    checkmate_time = pygame.time.get_ticks()
-                                    state = "checkmate"
+                                    game_result = result
+                                    game_over_time = pygame.time.get_ticks()
+                                    state = "game_over"
 
                             selected_square = None
                             highlights = []
@@ -194,20 +197,17 @@ def main():
 
                         result = check_game_end(board, piece_moves)
                         if result:
-                            winner = result
-                            checkmate_time = pygame.time.get_ticks()
-                            state = "checkmate"
+                            game_result = result
+                            game_over_time = pygame.time.get_ticks()
+                            state = "game_over"
                         else:
                             state = "playing"
                         break
 
-        elif state == "checkmate":
+        elif state == "game_over":
             renderer.draw(board.grid, [])
-            if winner == "stalemate":
-                renderer.draw_checkmate_popup("Stalemate")
-            else:
-                renderer.draw_checkmate_popup(winner)
-            if pygame.time.get_ticks() - checkmate_time >= CHECKMATE_DISPLAY_MS:
+            renderer.draw_game_over_popup(*game_result)
+            if pygame.time.get_ticks() - game_over_time >= GAME_OVER_DISPLAY_MS:
                 state = "menu"
 
         pygame.display.flip()

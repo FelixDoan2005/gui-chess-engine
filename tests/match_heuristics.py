@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import engine.ai as ai_module
 from engine.ai import AI, PIECE_VALUES, make_move
-from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check
+from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, draw_reason
 
 # Each matchup is (engine A's heuristics, engine B's heuristics).
 # Scores are reported from engine A's side.
@@ -30,9 +30,9 @@ MATCHUPS = [
 DEPTHS = (2, 3, 4)
 GAMES_PER_MATCHUP = 200   # per depth; half with A as White, half with A as Black
 
-MAX_PLIES = 150        # stop a game after this many moves
+MAX_PLIES = 1000       # safety net only; the draw rules end games well before this
 OPENING_PLIES = 4      # random moves played before the engines take over
-ADJUDICATE_MARGIN = 3  # at the move cap, this much material ahead = win
+ADJUDICATE_MARGIN = 3  # if the safety net is ever hit, this much material ahead = win
 RESULTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "match_heuristics_results.txt")
 
 real_mobility = ai_module.mobility
@@ -77,16 +77,6 @@ def material(board):
     return white, black
 
 
-def position_key(board):
-    return (
-        tuple(tuple(row) for row in board.grid),
-        board.turn,
-        board.en_passant_ts,
-        board.white_king_moved, board.white_rook_kingside_moved, board.white_rook_queenside_moved,
-        board.black_king_moved, board.black_rook_kingside_moved, board.black_rook_queenside_moved,
-    )
-
-
 def random_opening(seed):
     rng = random.Random(seed)
     board = Board()
@@ -107,14 +97,12 @@ def play_game(task):
         board.move_piece(*move)
 
     ai = AI()
-    seen = {}
     winner, reason = None, "move limit"
 
     for _ in range(MAX_PLIES):
-        key = position_key(board)
-        seen[key] = seen.get(key, 0) + 1
-        if seen[key] >= 3:
-            reason = "repetition"
+        draw = draw_reason(board)
+        if draw:
+            reason = draw
             break
 
         if not get_all_legal_moves(board, piece_moves):

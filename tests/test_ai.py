@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from engine.ai import AI, CHECKMATE_SCORE, negamax, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, game_phase
-from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check
+from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, draw_reason, insufficient_material
 
 
 def empty_board(white_king, black_king, turn):
@@ -113,6 +113,62 @@ def test_move_piece_counts_plies():
     board.move_piece((6, 4), (4, 4))
     board.move_piece((1, 4), (3, 4))
     assert board.ply == 2
+
+
+def test_threefold_repetition_is_a_draw():
+    board = Board()
+    knight_shuffle = [((7, 6), (5, 5)), ((0, 6), (2, 5)), ((5, 5), (7, 6)), ((2, 5), (0, 6))]
+    for move in knight_shuffle:          # start position now seen twice
+        board.move_piece(*move)
+    assert draw_reason(board) is None
+    for move in knight_shuffle:          # third time
+        board.move_piece(*move)
+    assert draw_reason(board) == "threefold repetition"
+
+
+def test_halfmove_clock_resets_on_pawn_move_and_capture():
+    board = Board()
+    board.move_piece((7, 6), (5, 5))     # knight move
+    assert board.halfmove_clock == 1
+    board.move_piece((1, 4), (3, 4))     # pawn move
+    assert board.halfmove_clock == 0
+    board.move_piece((5, 5), (3, 4))     # knight takes pawn
+    assert board.halfmove_clock == 0
+
+
+def test_fifty_move_rule_is_a_draw():
+    board = Board()
+    board.halfmove_clock = 100
+    assert draw_reason(board) == "50-move rule"
+
+
+def test_insufficient_material():
+    def grid_with(pieces):
+        grid = [[None] * 8 for _ in range(8)]
+        grid[7][4] = "white_king"
+        grid[0][4] = "black_king"
+        for (r, c), piece in pieces.items():
+            grid[r][c] = piece
+        return grid
+
+    assert insufficient_material(grid_with({}))                                   # K v K
+    assert insufficient_material(grid_with({(5, 5): "white_knight"}))            # KN v K
+    assert insufficient_material(grid_with({(5, 5): "white_bishop",
+                                            (2, 2): "black_bishop"}))            # same-colour bishops
+    assert not insufficient_material(grid_with({(5, 5): "white_bishop",
+                                                (2, 3): "black_bishop"}))        # opposite-colour bishops
+    assert not insufficient_material(grid_with({(5, 5): "white_rook"}))          # KR v K can mate
+    assert not insufficient_material(grid_with({(6, 0): "white_pawn"}))          # pawn can promote
+
+
+def test_search_leaves_history_unchanged():
+    board = Board()
+    board.move_piece((6, 4), (4, 4))
+    history_before = list(board.history)
+    counts_before = dict(board.position_counts)
+    AI().choose_move(board, piece_moves, 3)
+    assert board.history == history_before
+    assert {k: v for k, v in board.position_counts.items() if v} == counts_before
 
 
 

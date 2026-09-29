@@ -83,12 +83,14 @@ class Renderer:
         text = self.font_med.render("Engine is thinking...", True, (255, 255, 0))
         self.screen.blit(text, (10, 10))
 
-    def draw_checkmate_popup(self, winner):
+    def draw_game_over_popup(self, title, reason):
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
-        msg = self.font_large.render(f"{winner.capitalize()} wins!", True, (255, 215, 0))
-        self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - msg.get_height() // 2))
+        title_text = self.font_large.render(title, True, (255, 215, 0))
+        reason_text = self.font_med.render(reason, True, (255, 255, 255))
+        self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 2 - title_text.get_height()))
+        self.screen.blit(reason_text, (WIDTH // 2 - reason_text.get_width() // 2, HEIGHT // 2 + 10))
 
     def draw_promotion_picker(self, colour):
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
