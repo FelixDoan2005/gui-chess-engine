@@ -26,7 +26,7 @@ ADJUDICATE_MARGIN = 3  # at the move cap, this much material ahead = win
 real_mobility = ai_module.mobility
 
 
-def no_mobility(board):
+def no_mobility(*args):
     return 0
 
 
@@ -82,10 +82,13 @@ def play_game(task):
             return depth, mobility_side, None, "repetition"
 
         if not get_all_legal_moves(board, piece_moves):
-            king_pos = board.white_king if board.turn == "white" else board.black_king
+            if board.turn == "white":
+                king_pos = board.white_king
+                winner = "black"
+            else:
+                king_pos = board.black_king
+                winner = "white"
             if in_check(board.grid, board.turn, king_pos):
-                loser = board.turn
-                winner = "black" if loser == "white" else "white"
                 return depth, mobility_side, winner, "checkmate"
             return depth, mobility_side, None, "stalemate"
 

@@ -16,9 +16,13 @@ GAME_OVER_DISPLAY_MS = 5000
 def check_game_end(board, piece_moves):
     # Returns (title, reason) for the game-over popup, or None if play continues.
     if not get_all_legal_moves(board, piece_moves):
-        king_pos = board.white_king if board.turn == "white" else board.black_king
+        if board.turn == "white":
+            king_pos = board.white_king
+            winner = "Black"
+        else:
+            king_pos = board.black_king
+            winner = "White"
         if in_check(board.grid, board.turn, king_pos):
-            winner = "Black" if board.turn == "white" else "White"
             return f"{winner} wins!", "by checkmate"
         return "Draw", "by stalemate"
 

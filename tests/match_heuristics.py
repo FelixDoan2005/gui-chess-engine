@@ -1,6 +1,6 @@
 """Engine vs engine matches between different sets of eval heuristics.
 
-  ps = pawn_structure, m = mobility. Piece-square tables are always on.
+  ps = pawn_structure, m = mobility, bp = bishop pair. Piece-square tables are always on.
 
 Run from the project root (or click Run in VS Code):
     python tests/match_heuristics.py
@@ -22,10 +22,8 @@ from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, dr
 # Each matchup is (engine A's heuristics, engine B's heuristics).
 # Scores are reported from engine A's side.
 MATCHUPS = [
-    ({"ps"}, set()),
-    ({"ps", "m"}, set()),
-    ({"ps", "m"}, {"m"}),
-    ({"ps"}, {"m"}),
+    ({"m", "ps", "bp"}, {"m", "ps"}),   # bishop pair on vs off in the full engine
+    ({"bp"}, set()),                    # bishop pair on its own vs nothing
 ]
 DEPTHS = (2, 3, 4)
 GAMES_PER_MATCHUP = 200   # per depth; half with A as White, half with A as Black
@@ -33,13 +31,14 @@ GAMES_PER_MATCHUP = 200   # per depth; half with A as White, half with A as Blac
 MAX_PLIES = 1000       # safety net only; the draw rules end games well before this
 OPENING_PLIES = 4      # random moves played before the engines take over
 ADJUDICATE_MARGIN = 3  # if the safety net is ever hit, this much material ahead = win
-RESULTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "match_heuristics_results.txt")
+RESULTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "match_bishop_pair_results.txt")
 
 real_mobility = ai_module.mobility
 real_pawn_structure = ai_module.pawn_structure
+real_bishop_pair = ai_module.bishop_pair
 
 
-def off(board):
+def off(*args):
     return 0
 
 
@@ -61,6 +60,11 @@ def use_features(features):
         ai_module.pawn_structure = real_pawn_structure
     else:
         ai_module.pawn_structure = off
+
+    if "bp" in features:
+        ai_module.bishop_pair = real_bishop_pair
+    else:
+        ai_module.bishop_pair = off
 
 
 def material(board):
@@ -106,9 +110,14 @@ def play_game(task):
             break
 
         if not get_all_legal_moves(board, piece_moves):
-            king_pos = board.white_king if board.turn == "white" else board.black_king
+            if board.turn == "white":
+                king_pos = board.white_king
+                checkmate_winner = "black"
+            else:
+                king_pos = board.black_king
+                checkmate_winner = "white"
             if in_check(board.grid, board.turn, king_pos):
-                winner = "black" if board.turn == "white" else "white"
+                winner = checkmate_winner
                 reason = "checkmate"
             else:
                 reason = "stalemate"
@@ -166,7 +175,7 @@ def run():
     lines = [
         f"Finished {len(tasks)} games in {elapsed / 60:.1f} min",
         "Score = wins + half of draws, for engine A. 50% = no difference.",
-        "ps = pawn structure, m = mobility. Piece-square tables always on.",
+        "ps = pawn structure, m = mobility, bp = bishop pair. Piece-square tables always on.",
     ]
 
     for matchup_index, (a_features, b_features) in enumerate(MATCHUPS):

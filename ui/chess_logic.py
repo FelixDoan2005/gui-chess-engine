@@ -31,7 +31,6 @@ class Board:
         self.black_rook_kingside_moved = False  
         self.black_rook_queenside_moved = False
         self.en_passant_ts = None
-        self.ply = 0
         self.halfmove_clock = 0  # plies since the last capture or pawn move (50-move rule)
         self.history = [self.position_key()]
         self.position_counts = {self.history[0]: 1}
@@ -59,8 +58,10 @@ class Board:
             self.halfmove_clock += 1
         self.grid[tr][tc] = moving_piece
         self.grid[fr][fc] = None
-        self.turn = "black" if self.turn == "white" else "white"
-        self.ply += 1
+        if self.turn == "white":
+            self.turn = "black"
+        else:
+            self.turn = "white"
         prev_en_passant_ts = self.en_passant_ts
         self.en_passant_ts = None
 
@@ -89,6 +90,16 @@ class Board:
                 self.black_rook_queenside_moved = True
             elif from_sq == (0,7):
                 self.black_rook_kingside_moved = True
+
+        # A rook captured on its starting square can never castle either.
+        if to_sq == (7,7):
+            self.white_rook_kingside_moved = True
+        elif to_sq == (7,0):
+            self.white_rook_queenside_moved = True
+        elif to_sq == (0,7):
+            self.black_rook_kingside_moved = True
+        elif to_sq == (0,0):
+            self.black_rook_queenside_moved = True
 
         if self.grid[tr][tc] == "white_king" and from_sq == (7,4):
             if to_sq == (7,6):
@@ -309,29 +320,65 @@ def queen_moves(row, col, grid, colour):
     moves = bishop_moves(row, col, grid, colour) + rook_moves(row, col, grid, colour)
     return moves
 
-#all moves store to prevent illegal king moves
+def pawn_attack_squares(row, col, colour):
+    # Both forward diagonals, whether or not anything stands there. Unlike
+    # pawn_moves, never the square straight ahead: pawns don't attack forward.
+    if colour == "white":
+        attack_row = row - 1
+    else:
+        attack_row = row + 1
+    if not 0 <= attack_row <= 7:
+        return []
+    return [(attack_row, c) for c in (col - 1, col + 1) if 0 <= c <= 7]
 
-def all_highlights_for_colour(colour, grid, en_passant_ts):
-    all_moves = []
-    king_steps = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
-    for row in range(8):
-        for col in range(8):
-            piece = grid[row][col]
-            if piece is not None and piece.startswith(colour):
-                kind = piece.split("_")[1]
-                if kind == "king":
-                    for step_row, step_col in king_steps:
-                        r = row + step_row
-                        c = col + step_col
-                        if 0 <= r <= 7 and 0 <= c <= 7:
-                            all_moves.append((r, c))
-                elif kind in piece_moves:
-                    if kind == "pawn":
-                        moves = piece_moves[kind](row, col, grid, colour, en_passant_ts)
-                    else:
-                        moves = piece_moves[kind](row, col, grid, colour)
-                    all_moves += moves
-    return all_moves
+
+KNIGHT_JUMPS = [(-2, -1), (-2, 1), (2, -1), (2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2)]
+KING_STEPS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+DIAGONAL_DIRECTIONS = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+STRAIGHT_DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+
+def square_attacked(grid, square, by_colour):
+    # Instead of generating every enemy move, look outward from the square for
+    # a piece that could reach it: pawns, knights and the king on their fixed
+    # squares, rooks/bishops/queens along lines (stopping at the first piece).
+    row, col = square
+
+    if by_colour == "white":
+        pawn_row = row + 1  # white pawns attack upwards, so they sit one row below
+    else:
+        pawn_row = row - 1
+    if 0 <= pawn_row <= 7:
+        for pawn_col in (col - 1, col + 1):
+            if 0 <= pawn_col <= 7 and grid[pawn_row][pawn_col] == by_colour + "_pawn":
+                return True
+
+    knight = by_colour + "_knight"
+    for dr, dc in KNIGHT_JUMPS:
+        r, c = row + dr, col + dc
+        if 0 <= r <= 7 and 0 <= c <= 7 and grid[r][c] == knight:
+            return True
+
+    king = by_colour + "_king"
+    for dr, dc in KING_STEPS:
+        r, c = row + dr, col + dc
+        if 0 <= r <= 7 and 0 <= c <= 7 and grid[r][c] == king:
+            return True
+
+    queen = by_colour + "_queen"
+    for directions, slider in ((STRAIGHT_DIRECTIONS, by_colour + "_rook"),
+                               (DIAGONAL_DIRECTIONS, by_colour + "_bishop")):
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            while 0 <= r <= 7 and 0 <= c <= 7:
+                piece = grid[r][c]
+                if piece is not None:
+                    if piece == slider or piece == queen:
+                        return True
+                    break
+                r, c = r + dr, c + dc
+    return False
+
 
 def king_moves(row, col, grid, colour, board):
     moves = []
@@ -340,8 +387,6 @@ def king_moves(row, col, grid, colour, board):
         enemy_colour = "black"
     else:
         enemy_colour = "white"
-    
-    enemy_moves = all_highlights_for_colour(enemy_colour, grid, None)
 
     king_steps = [(-1,-1),(-1,0),(0,-1),(0,1),(1,-1),(1,1),(-1,1),(1,0)]
 
@@ -352,27 +397,31 @@ def king_moves(row, col, grid, colour, board):
         if 0 <= landing_row <= 7 and 0 <= landing_col <= 7:
             landing_piece = grid[landing_row][landing_col]
             if landing_piece is None or not landing_piece.startswith(colour):
-                if (landing_row, landing_col) not in enemy_moves:
+                if not square_attacked(grid, (landing_row, landing_col), enemy_colour):
                     moves.append((landing_row, landing_col))
 
-    if board.white_king_moved == False and colour == "white":
-        if board.white_rook_kingside_moved == False:
+    if board.white_king_moved == False and colour == "white" and (row, col) == (7,4):
+        if board.white_rook_kingside_moved == False and grid[7][7] == "white_rook":
             if grid[7][5] is None and grid[7][6] is None:
-                if (7,5) not in enemy_moves and (7,6) not in enemy_moves and not in_check(grid, colour, (7,4)):
+                if (not square_attacked(grid, (7,5), enemy_colour) and not square_attacked(grid, (7,6), enemy_colour)
+                        and not in_check(grid, colour, (7,4))):
                     moves.append((7,6))
-        if board.white_rook_queenside_moved == False:
+        if board.white_rook_queenside_moved == False and grid[7][0] == "white_rook":
             if grid[7][1] is None and grid[7][2] is None and grid[7][3] is None:
-                if (7,2) not in enemy_moves and (7,3) not in enemy_moves and not in_check(grid, colour, (7,4)):
+                if (not square_attacked(grid, (7,2), enemy_colour) and not square_attacked(grid, (7,3), enemy_colour)
+                        and not in_check(grid, colour, (7,4))):
                     moves.append((7,2))
 
-    if board.black_king_moved == False and colour == "black":
-        if board.black_rook_kingside_moved == False:
+    if board.black_king_moved == False and colour == "black" and (row, col) == (0,4):
+        if board.black_rook_kingside_moved == False and grid[0][7] == "black_rook":
             if grid[0][5] is None and grid[0][6] is None:
-                if (0,5) not in enemy_moves and (0,6) not in enemy_moves and not in_check(grid, colour, (0,4)):
+                if (not square_attacked(grid, (0,5), enemy_colour) and not square_attacked(grid, (0,6), enemy_colour)
+                        and not in_check(grid, colour, (0,4))):
                     moves.append((0,6))
-        if board.black_rook_queenside_moved == False:
+        if board.black_rook_queenside_moved == False and grid[0][0] == "black_rook":
             if grid[0][1] is None and grid[0][2] is None and grid[0][3] is None:
-                if (0,2) not in enemy_moves and (0,3) not in enemy_moves and not in_check(grid, colour, (0,4)):
+                if (not square_attacked(grid, (0,2), enemy_colour) and not square_attacked(grid, (0,3), enemy_colour)
+                        and not in_check(grid, colour, (0,4))):
                     moves.append((0,2))
     return moves
 
@@ -390,12 +439,7 @@ def in_check(grid, colour, king_pos):
         enemy_colour = "black"
     else:
         enemy_colour = "white"
-    
-    enemy_attacks = all_highlights_for_colour(enemy_colour, grid, None)
-    if king_pos in enemy_attacks:
-        return True
-    else:
-        return False
+    return square_attacked(grid, king_pos, enemy_colour)
     
 
 def is_legal_move(grid, colour, from_sq, to_sq, king_pos):
@@ -428,7 +472,10 @@ def select_piece(square, piece, board, piece_moves):
         highlights = piece_moves[current_piece](row, col, board.grid, colour, board.en_passant_ts)
     else:
         highlights = piece_moves[current_piece](row, col, board.grid, colour)
-    king_pos = board.white_king if colour == "white" else board.black_king
+    if colour == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
     legal_highlights = [move for move in highlights if is_legal_move(board.grid, colour, square, move, king_pos)]
     return square, legal_highlights
 
