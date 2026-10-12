@@ -765,25 +765,74 @@ def mop_up(board):
     return sign * value / 10
 
 
-def order_moves(board, moves):
-    # Search the most forcing moves first: big captures, and promotions
-    # (worth about a queen). On a tie, choose_move keeps the first move
-    # it found, so this also makes it promote now rather than later.
+# Move ordering (chessprogramming.org/Move_Ordering): alpha-beta stops
+# searching a position as soon as one move is good enough, so the sooner the
+# best move is tried, the fewer positions get searched.
+
+# Killer moves (chessprogramming.org/Killer_Heuristic): quiet moves that caused
+# a cutoff, kept per ply (len(board.history)). A move that refuted one line is
+# often good in the lines next to it too. Emptied at the start of every
+# choose_move.
+killer_moves = {}
+KILLER_VALUE = 0.5  # after every capture (the cheapest scores 0.9), before quiet moves (0)
+
+
+def remember_killer(ply, move):
+    killers = killer_moves.get(ply, [])
+    if move not in killers:
+        killer_moves[ply] = [move] + killers[:1]  # keep the 2 most recent
+
+
+def order_moves(board, moves, killers=(), best_move=None):
+    # Try first:
+    #   1. best_move: the best move the transposition table has for this position
+    #   2. captures, most valuable victim first and, for equal victims, the
+    #      cheapest attacker first (MVV-LVA), and promotions (worth a queen)
+    #   3. killer moves
+    #   4. every other move
+    # On a tie, choose_move keeps the first move it found, so promotions
+    # coming early also makes it promote now rather than later.
     def move_value(move):
+        if move == best_move:
+            return 1000
         from_sq, to_sq = move
+        moving = board.get_piece(*from_sq)
         value = 0
 
         target = board.get_piece(*to_sq)
         if target is not None:
-            value += PIECE_VALUES[target.split("_")[1]]
+            # The attacker is divided by 1000 so even the king (100) only
+            # breaks ties between equal victims, never outweighs a pawn (1).
+            value += PIECE_VALUES[target.split("_")[1]] - PIECE_VALUES[moving.split("_")[1]] / 1000
 
-        moving = board.get_piece(*from_sq)
         if moving.endswith("pawn") and to_sq[0] in (0, 7):
             value += PIECE_VALUES["queen"]
 
+        if value == 0 and move in killers:
+            value = KILLER_VALUE
         return value
 
     return sorted(moves, key=move_value, reverse=True)
+
+
+# Transposition table (chessprogramming.org/Transposition_Table): the result of
+# every position searched, so when the same position comes up again through a
+# different move order, it isn't searched again. Keyed by hash() of the
+# position key (one 64-bit number instead of the whole board) to keep it small.
+# Each entry is (depth, score, flag, best move). The flag says what the score
+# is, because alpha-beta often stops early and only learns a bound:
+EXACT = 0        # the real score
+LOWER_BOUND = 1  # a move reached beta, so the real score is at least this
+UPPER_BOUND = 2  # no move beat alpha, so the real score is at most this
+transposition_table = {}  # emptied at the start of every choose_move
+
+
+def remember_position(key, depth, score, flag, best_move):
+    # Keep the deeper search if the position was already stored.
+    entry = transposition_table.get(key)
+    if entry is None or depth >= entry[0]:
+        transposition_table[key] = (depth, score, flag, best_move)
+
 
 def save_state(board):
     grid_copy = []
@@ -854,15 +903,33 @@ def make_move(board, from_sq, to_sq):
 
 
 def negamax(board, piece_moves, depth, alpha, beta):
+    # Checked before the transposition table: whether a position is a
+    # repetition depends on how it was reached, which the table doesn't know.
     if is_draw_in_search(board):
         return 0
 
+    key = hash(board.history[-1])
+    entry = transposition_table.get(key)
+    best_move = None
+    if entry is not None:
+        entry_depth, entry_score, entry_flag, best_move = entry
+        # Only trust a score from a search at least this deep.
+        if entry_depth >= depth:
+            if entry_flag == EXACT:
+                return entry_score
+            if entry_flag == LOWER_BOUND and entry_score >= beta:
+                return beta
+            if entry_flag == UPPER_BOUND and entry_score <= alpha:
+                return alpha
+
     if depth == 0:
         if board.turn == "white":
-            return evaluate(board)
+            score = evaluate(board)
         else:
-            return -evaluate(board)
-    
+            score = -evaluate(board)
+        remember_position(key, 0, score, EXACT, None)
+        return score
+
     moves = get_all_legal_moves(board, piece_moves)
 
     if len(moves) == 0:
@@ -873,27 +940,54 @@ def negamax(board, piece_moves, depth, alpha, beta):
         if in_check(board.grid, board.turn, king_pos):
             return -CHECKMATE_SCORE
         return 0
-    for (from_sq, to_sq) in order_moves(board, moves):
+
+    ply = len(board.history)
+    best_move_here = None
+    for (from_sq, to_sq) in order_moves(board, moves, killer_moves.get(ply, []), best_move):
+        quiet = board.grid[to_sq[0]][to_sq[1]] is None
         state = save_state(board)
         make_move(board, from_sq, to_sq)
         score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
         restore_state(board, state)
 
         if score >= beta:
+            if quiet:
+                remember_killer(ply, (from_sq, to_sq))
+            remember_position(key, depth, beta, LOWER_BOUND, (from_sq, to_sq))
             return beta
         if score > alpha:
             alpha = score
+            best_move_here = (from_sq, to_sq)
 
+    if best_move_here is None:
+        remember_position(key, depth, alpha, UPPER_BOUND, best_move)
+    else:
+        remember_position(key, depth, alpha, EXACT, best_move_here)
     return alpha
 
 
 class AI:
     def choose_move(self, board, piece_moves, depth):
+        # Fresh tables for every move, so nothing carries over between moves
+        # (or between two engines with different heuristics in a test match).
+        killer_moves.clear()
+        transposition_table.clear()
         moves = get_all_legal_moves(board, piece_moves)
+
+        # Iterative deepening (chessprogramming.org/Iterative_Deepening): search
+        # depth 1, then 2, ... up to depth. Each search leaves its best moves in
+        # the transposition table (and killer moves), so the next, deeper one
+        # tries the best move first almost everywhere and cuts off much more.
+        best_move = None
+        for current_depth in range(1, depth + 1):
+            best_move = self.search_root(board, piece_moves, moves, current_depth, best_move)
+        return best_move
+
+    def search_root(self, board, piece_moves, moves, depth, previous_best):
         alpha = -float('inf')
         beta = float('inf')
         best_move = None
-        for (from_sq, to_sq) in order_moves(board, moves):
+        for (from_sq, to_sq) in order_moves(board, moves, best_move=previous_best):
             state = save_state(board)
             make_move(board, from_sq, to_sq)
             score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
