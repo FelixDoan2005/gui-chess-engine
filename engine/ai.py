@@ -1066,6 +1066,36 @@ def check_time():
         raise SearchTimeout
 
 
+# PVS (chessprogramming.org/Principal_Variation_Search): the first move gets a
+# full search and sets the base. every other move only gets a yes/no check,
+# "does it beat the base?", using a window this narrow (in pawns). only a yes
+# gets searched again fully
+#
+# PVS:
+# fully searches one move and sets as base.
+# checks second move.
+# checks oponents responses.
+# If any of those responses > than base continue
+# If any of those responses < base skip.
+#  - because there is an option for < base oponent would force this path so pick base move.
+# If all responses > base high fail re search the second move
+PVS_WINDOW = 0.001
+
+
+def search_child(board, piece_moves, depth, alpha, beta, first_move):
+    # the move has already been made on the board
+    if first_move:
+        return -negamax(board, piece_moves, depth, -beta, -alpha)
+
+    # yes/no check: does it beat alpha?
+    score = -negamax(board, piece_moves, depth, -alpha - PVS_WINDOW, -alpha)
+
+    # yes: search it again fully for its real score
+    if alpha < score < beta:
+        score = -negamax(board, piece_moves, depth, -beta, -alpha)
+    return score
+
+
 def negamax(board, piece_moves, depth, alpha, beta):
     check_time()
     # Checked before the transposition table: whether a position is a
@@ -1110,11 +1140,13 @@ def negamax(board, piece_moves, depth, alpha, beta):
 
     ply = len(board.history)
     best_move_here = None
+    first_move = True
     for (from_sq, to_sq) in order_moves(board, moves, killer_moves.get(ply, []), best_move):
         quiet = board.grid[to_sq[0]][to_sq[1]] is None
         state = save_state(board)
         make_move(board, from_sq, to_sq)
-        score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
+        score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move)
+        first_move = False
         restore_state(board, state)
 
         if score >= beta:
@@ -1178,11 +1210,13 @@ class AI:
         alpha = -float('inf')
         beta = float('inf')
         best_move = None
+        first_move = True
         for (from_sq, to_sq) in order_moves(board, moves, best_move=previous_best):
             state = save_state(board)
             make_move(board, from_sq, to_sq)
             try:
-                score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
+                score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move)
+                first_move = False
             except SearchTimeout:
                 # out of time partway through this move: put the board back.
                 # the moves before it were searched fully, and the previous
