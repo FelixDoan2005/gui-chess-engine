@@ -7,7 +7,7 @@ from ui import InputHandler
 from ui import FPS
 from ui import Board, pixel_to_square
 from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves, draw_reason
-from engine.ai import evaluate, AI, DIFFICULTY_DEPTH, clone_board
+from engine.ai import AI, DIFFICULTY_DEPTH, clone_board
 
 GAME_OVER_DISPLAY_MS = 5000
 
@@ -161,7 +161,6 @@ def main():
                     else:
                         if square in highlights:
                             promo_colour = make_move_and_check_promotion(board, selected_square, square)
-                            print(evaluate(board))
 
                             if promo_colour is not None:
                                 promotion_square = square
