@@ -902,6 +902,57 @@ def make_move(board, from_sq, to_sq):
         board.grid[row][col] = piece.split("_")[0] + "_queen"
 
 
+def is_capture_or_promotion(board, move):
+    from_sq, to_sq = move
+    moving = board.grid[from_sq[0]][from_sq[1]]
+    if board.grid[to_sq[0]][to_sq[1]] is not None:
+        return True
+    if moving.endswith("pawn"):
+        if from_sq[1] != to_sq[1]:
+            return True  # en passant: a pawn moving sideways onto an empty square
+        if to_sq[0] in (0, 7):
+            return True
+    return False
+
+
+# Quiescence search (chessprogramming.org/Quiescence_Search): at the end of the
+# normal search, keep playing captures (and promotions) until the position is
+# quiet, and only score it then. Without it, the engine scores positions in the
+# middle of a trade, e.g. right after its queen takes a defended pawn, before
+# the recapture (the horizon effect!!!).
+def quiescence(board, piece_moves, alpha, beta):
+    if is_draw_in_search(board):
+        return 0
+
+    # "Stand pat": the side to move doesn't have to capture, so the score
+    # as it stands is the least it can get.
+    if board.turn == "white":
+        stand_pat = evaluate(board)
+    else:
+        stand_pat = -evaluate(board)
+    if stand_pat >= beta:
+        return beta
+    if stand_pat > alpha:
+        alpha = stand_pat
+
+    captures = []
+    for move in get_all_legal_moves(board, piece_moves):
+        if is_capture_or_promotion(board, move):
+            captures.append(move)
+
+    for (from_sq, to_sq) in order_moves(board, captures):
+        state = save_state(board)
+        make_move(board, from_sq, to_sq)
+        score = -quiescence(board, piece_moves, -beta, -alpha)
+        restore_state(board, state)
+
+        if score >= beta:
+            return beta
+        if score > alpha:
+            alpha = score
+    return alpha
+
+
 def negamax(board, piece_moves, depth, alpha, beta):
     # Checked before the transposition table: whether a position is a
     # repetition depends on how it was reached, which the table doesn't know.
@@ -923,12 +974,7 @@ def negamax(board, piece_moves, depth, alpha, beta):
                 return alpha
 
     if depth == 0:
-        if board.turn == "white":
-            score = evaluate(board)
-        else:
-            score = -evaluate(board)
-        remember_position(key, 0, score, EXACT, None)
-        return score
+        return quiescence(board, piece_moves, alpha, beta)
 
     moves = get_all_legal_moves(board, piece_moves)
 

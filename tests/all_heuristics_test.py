@@ -424,7 +424,6 @@ def write_summary(games):
         print(f"\n  Couldn't update the summary files: {error}")
     return report
 
-
 def ignore_ctrl_c():
     # Workers ignore Ctrl+C; the main process catches it and stops them.
     signal.signal(signal.SIGINT, signal.SIG_IGN)

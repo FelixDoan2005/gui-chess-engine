@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from engine.ai import AI, CHECKMATE_SCORE, negamax, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, piece_square_value, evaluate, mop_up, centre_distance
+from engine.ai import AI, CHECKMATE_SCORE, negamax, make_move, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, piece_square_value, evaluate, mop_up, centre_distance
 from engine.ai import rook_open_files, ROOK_OPEN_FILE_BONUS, ROOK_SEMI_OPEN_FILE_BONUS, pawn_structure
 from engine.ai import knight_outposts, bishop_pawn_pairs, BISHOP_PAWN_PAIR_BONUS, king_pawn_shield, king_attackers
 from engine.ai import hanging_pieces, centre_control, endgame_weight, blend
@@ -55,7 +55,16 @@ def test_finds_back_rank_mate_in_one():
 def test_black_promotion_does_not_crash_search():
     board = empty_board((7, 7), (0, 4), "black")
     board.grid[6][0] = "black_pawn"
-    assert AI().choose_move(board, piece_moves, 3) == ((6, 0), (7, 0))
+    # Nothing can stop the pawn, and quiescence search sees it can promote
+    # whenever it likes, so it may make one king move first. It must promote
+    # within its next two moves.
+    promoted = False
+    for _ in range(4):
+        make_move(board, *AI().choose_move(board, piece_moves, 3))
+        if board.grid[7][0] == "black_queen":
+            promoted = True
+            break
+    assert promoted
 
 def test_pawn_files_ignores_other_colour_and_other_pieces():
     grid = [[None] * 8 for _ in range(8)]
