@@ -1,4 +1,4 @@
-from ui.chess_logic import Board, get_all_legal_moves, select_piece, in_check, insufficient_material, pawn_attack_squares
+from ui.chess_logic import Board, get_all_legal_moves, select_piece, is_legal_move, in_check, insufficient_material, pawn_attack_squares
 from ui.chess_logic import KNIGHT_JUMPS, KING_STEPS, DIAGONAL_DIRECTIONS, STRAIGHT_DIRECTIONS
 
 CHECKMATE_SCORE = 999999
@@ -915,6 +915,65 @@ def is_capture_or_promotion(board, move):
     return False
 
 
+def get_legal_captures(board, piece_moves):
+    # like get_all_legal_moves, but only checks if captures and promotions
+    # are legal, the only moves quiescence search plays
+    captures = []
+    if board.turn == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
+
+    for row in range(8):
+        for col in range(8):
+            piece = board.grid[row][col]
+            if piece is not None and piece.startswith(board.turn):
+                kind = piece.split("_")[1]
+                if kind == "king":
+                    targets = piece_moves[kind](row, col, board.grid, board.turn, board)
+                elif kind == "pawn":
+                    targets = piece_moves[kind](row, col, board.grid, board.turn, board.en_passant_ts)
+                else:
+                    targets = piece_moves[kind](row, col, board.grid, board.turn)
+
+                for target in targets:
+                    move = ((row, col), target)
+                    if is_capture_or_promotion(board, move):
+                        if is_legal_move(board.grid, board.turn, (row, col), target, king_pos):
+                            captures.append(move)
+    return captures
+
+
+# delta pruning (chessprogramming.org/Delta_Pruning): skip a capture that
+# can't raise alpha even if it wins the piece plus a safety margin of 200
+# centipawns. it's turned off in the late endgame, where one pawn can decide
+# the game: here, once a quarter or less of the 24 phase points are left
+DELTA_MARGIN = 2
+LATE_ENDGAME_PHASE = 6
+
+
+def game_phase(board):
+    # phase points left: 24 at the start, 0 with only kings and pawns
+    remaining = 0
+    for row in board.grid:
+        for piece in row:
+            if piece is not None:
+                remaining += PHASE_WEIGHTS.get(piece.split("_")[1], 0)
+    return remaining
+
+
+def has_legal_move(board, piece_moves):
+    # stops at the first legal move it finds
+    for row in range(8):
+        for col in range(8):
+            piece = board.grid[row][col]
+            if piece is not None and piece.startswith(board.turn):
+                _, legal_moves = select_piece((row, col), piece, board, piece_moves)
+                if len(legal_moves) > 0:
+                    return True
+    return False
+
+
 # Quiescence search (chessprogramming.org/Quiescence_Search): at the end of the
 # normal search, keep playing captures (and promotions) until the position is
 # quiet, and only score it then. Without it, the engine scores positions in the
@@ -924,23 +983,53 @@ def quiescence(board, piece_moves, alpha, beta):
     if is_draw_in_search(board):
         return 0
 
-    # "Stand pat": the side to move doesn't have to capture, so the score
-    # as it stands is the least it can get.
     if board.turn == "white":
-        stand_pat = evaluate(board)
+        king_pos = board.white_king
     else:
-        stand_pat = -evaluate(board)
-    if stand_pat >= beta:
-        return beta
-    if stand_pat > alpha:
-        alpha = stand_pat
+        king_pos = board.black_king
+    checked = in_check(board.grid, board.turn, king_pos)
 
-    captures = []
-    for move in get_all_legal_moves(board, piece_moves):
-        if is_capture_or_promotion(board, move):
-            captures.append(move)
+    if checked:
+        # in check: every move that gets out of it
+        search_moves = get_all_legal_moves(board, piece_moves)
 
-    for (from_sq, to_sq) in order_moves(board, captures):
+        # checkmate
+        if len(search_moves) == 0:
+            return -CHECKMATE_SCORE
+    else:
+        # stand pat: not capturing is allowed
+        if board.turn == "white":
+            stand_pat = evaluate(board)
+        else:
+            stand_pat = -evaluate(board)
+        if stand_pat >= beta:
+            return beta
+        if stand_pat > alpha:
+            alpha = stand_pat
+
+        search_moves = get_legal_captures(board, piece_moves)
+
+        # stalemate: no captures and no other moves either
+        if len(search_moves) == 0 and not has_legal_move(board, piece_moves):
+            return 0
+
+    delta_pruning = False
+    if not checked and len(search_moves) > 0:
+        delta_pruning = game_phase(board) > LATE_ENDGAME_PHASE
+
+    for (from_sq, to_sq) in order_moves(board, search_moves):
+        # delta pruning: even winning this piece can't raise alpha
+        if delta_pruning:
+            moving = board.grid[from_sq[0]][from_sq[1]]
+            target = board.grid[to_sq[0]][to_sq[1]]
+            promotion = moving.endswith("pawn") and to_sq[0] in (0, 7)
+            if target is None:
+                gain = PIECE_VALUES["pawn"]  # en passant
+            else:
+                gain = PIECE_VALUES[target.split("_")[1]]
+            if not promotion and stand_pat + gain + DELTA_MARGIN < alpha:
+                continue
+
         state = save_state(board)
         make_move(board, from_sq, to_sq)
         score = -quiescence(board, piece_moves, -beta, -alpha)
@@ -953,11 +1042,26 @@ def quiescence(board, piece_moves, alpha, beta):
     return alpha
 
 
+# check extension limit, set by choose_move: a long chain of checks
+# can't make the search go on forever
+max_search_ply = 0
+
+
 def negamax(board, piece_moves, depth, alpha, beta):
     # Checked before the transposition table: whether a position is a
     # repetition depends on how it was reached, which the table doesn't know.
     if is_draw_in_search(board):
         return 0
+
+    if board.turn == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
+    checked = in_check(board.grid, board.turn, king_pos)
+
+    # check extension: in check, search 1 move deeper
+    if checked and len(board.history) < max_search_ply:
+        depth += 1
 
     key = hash(board.history[-1])
     entry = transposition_table.get(key)
@@ -978,12 +1082,9 @@ def negamax(board, piece_moves, depth, alpha, beta):
 
     moves = get_all_legal_moves(board, piece_moves)
 
+    # checkmate or stalemate
     if len(moves) == 0:
-        if board.turn == "white":
-            king_pos = board.white_king
-        else:
-            king_pos = board.black_king
-        if in_check(board.grid, board.turn, king_pos):
+        if checked:
             return -CHECKMATE_SCORE
         return 0
 
@@ -1019,6 +1120,10 @@ class AI:
         killer_moves.clear()
         transposition_table.clear()
         moves = get_all_legal_moves(board, piece_moves)
+
+        # checks can extend a line to at most twice the depth
+        global max_search_ply
+        max_search_ply = len(board.history) + 2 * depth
 
         # Iterative deepening (chessprogramming.org/Iterative_Deepening): search
         # depth 1, then 2, ... up to depth. Each search leaves its best moves in

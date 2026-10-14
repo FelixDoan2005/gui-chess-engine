@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from engine.ai import AI, CHECKMATE_SCORE, negamax, make_move, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, piece_square_value, evaluate, mop_up, centre_distance
+from engine.ai import AI, CHECKMATE_SCORE, negamax, quiescence, game_phase, make_move, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, piece_square_value, evaluate, mop_up, centre_distance
 from engine.ai import rook_open_files, ROOK_OPEN_FILE_BONUS, ROOK_SEMI_OPEN_FILE_BONUS, pawn_structure
 from engine.ai import knight_outposts, bishop_pawn_pairs, BISHOP_PAWN_PAIR_BONUS, king_pawn_shield, king_attackers
 from engine.ai import hanging_pieces, centre_control, endgame_weight, blend
@@ -50,6 +50,40 @@ def test_finds_back_rank_mate_in_one():
     board.move_piece(*move)
     assert in_check(board.grid, "black", board.black_king)
     assert get_all_legal_moves(board, piece_moves) == []
+
+
+def test_quiescence_sees_checkmate():
+    # back rank mate: black is in check, so it can't stand pat
+    board = empty_board((7, 6), (0, 6), "black")
+    board.grid[1][5] = "black_pawn"
+    board.grid[1][6] = "black_pawn"
+    board.grid[1][7] = "black_pawn"
+    board.grid[0][4] = "white_rook"
+    assert quiescence(board, piece_moves, -float("inf"), float("inf")) == -CHECKMATE_SCORE
+
+
+def test_quiescence_sees_stalemate():
+    # black is a queen down but stalemated, so it's a draw
+    board = empty_board((1, 5), (0, 7), "black")
+    board.grid[2][6] = "white_queen"
+    assert quiescence(board, piece_moves, -float("inf"), float("inf")) == 0
+
+
+def test_game_phase_counts_down_from_24():
+    assert game_phase(Board()) == 24
+    # only kings and pawns left
+    board = empty_board((7, 4), (0, 4), "white")
+    board.grid[6][0] = "white_pawn"
+    assert game_phase(board) == 0
+
+
+def test_check_extension_finds_mate_in_2_at_depth_2():
+    # 1.Rg5+ then Ra8# or Rh4#: the mate is 3 moves deep, past depth 2,
+    # found only because the check makes that line search 1 deeper
+    board = empty_board((2, 4), (0, 6), "white")
+    board.grid[3][7] = "white_rook"
+    board.grid[4][0] = "white_rook"
+    assert AI().choose_move(board, piece_moves, 2) == ((3, 7), (3, 6))
 
 
 def test_black_promotion_does_not_crash_search():

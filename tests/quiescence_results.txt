@@ -18,3 +18,30 @@ Average time per move (12 test positions, before -> after quiescence search):
 Each depth is slower, because the search keeps following captures past the
 depth limit, but the engine gets far more strength per second: depth 3 with
 quiescence search beats depth 4 without it.
+
+In-check handling in quiescence search + check extension, vs quiescence search alone
+200 games at depth 3: 100 openings, each played twice with colours swapped.
+
+match                          result                 score    Elo
+new depth 3 vs old depth 3     126 W / 29 D / 45 L    70.2%    +149  [+107, +196]
+
+Total thinking time: new 297.3 min, old 204.7 min (45% more time for +149 Elo)
+
+Average time per move (12 test positions, before -> after):
+  depth 3:  0.62s ->  0.74s
+  depth 4:  3.16s ->  4.16s
+  depth 5: 10.92s -> 16.51s  (slowest position 43s -> 53s)
+
+Speed-ups to quiescence search: legality checks for captures only (A) + delta pruning (B)
+A gives an identical search (same move and same positions searched in 60/60 benchmark searches).
+B skips captures that can't raise alpha, so it was checked with a match:
+
+match                          result                 score    Elo
+new depth 3 vs old depth 3     81 W / 35 D / 84 L     49.2%    -5  [-30, +19]  (no measurable difference)
+
+Total thinking time: new 195.5 min, old 301.2 min (35% less)
+
+Average time per move (12 test positions): before -> after A -> after A + B
+  depth 3:  0.74s ->  0.61s ->  0.52s
+  depth 4:  4.16s ->  3.41s ->  2.62s
+  depth 5: 16.51s -> 14.24s -> 11.53s  (slowest position 53s -> 46s -> 34s)
