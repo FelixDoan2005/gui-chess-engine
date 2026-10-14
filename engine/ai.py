@@ -1,3 +1,5 @@
+import time
+
 from ui.chess_logic import Board, get_all_legal_moves, select_piece, is_legal_move, in_check, insufficient_material, pawn_attack_squares
 from ui.chess_logic import KNIGHT_JUMPS, KING_STEPS, DIAGONAL_DIRECTIONS, STRAIGHT_DIRECTIONS
 
@@ -873,6 +875,9 @@ def restore_state(board, state):
     while len(board.history) > state["history_len"]:
         key = board.history.pop()
         board.position_counts[key] -= 1
+        # a count of 0 means it never happened: remove it so the dict doesn't keep growing
+        if board.position_counts[key] == 0:
+            del board.position_counts[key]
 
 
 def clone_board(board):
@@ -980,6 +985,7 @@ def has_legal_move(board, piece_moves):
 # middle of a trade, e.g. right after its queen takes a defended pawn, before
 # the recapture (the horizon effect!!!).
 def quiescence(board, piece_moves, alpha, beta):
+    check_time()
     if is_draw_in_search(board):
         return 0
 
@@ -1046,8 +1052,22 @@ def quiescence(board, piece_moves, alpha, beta):
 # can't make the search go on forever
 max_search_ply = 0
 
+# time limit, set by choose_move: when to stop searching (None = no limit)
+search_deadline = None
+
+
+class SearchTimeout(Exception):
+    pass
+
+
+def check_time():
+    # out of time: stop the search straight away
+    if search_deadline is not None and time.perf_counter() > search_deadline:
+        raise SearchTimeout
+
 
 def negamax(board, piece_moves, depth, alpha, beta):
+    check_time()
     # Checked before the transposition table: whether a position is a
     # repetition depends on how it was reached, which the table doesn't know.
     if is_draw_in_search(board):
@@ -1114,7 +1134,7 @@ def negamax(board, piece_moves, depth, alpha, beta):
 
 
 class AI:
-    def choose_move(self, board, piece_moves, depth):
+    def choose_move(self, board, piece_moves, depth, time_limit=None):
         # Fresh tables for every move, so nothing carries over between moves
         # (or between two engines with different heuristics in a test match).
         killer_moves.clear()
@@ -1125,27 +1145,54 @@ class AI:
         global max_search_ply
         max_search_ply = len(board.history) + 2 * depth
 
+        # time limit in seconds, None = search the full depth however long it takes
+        global search_deadline
+        if time_limit is None:
+            search_deadline = None
+        else:
+            search_deadline = time.perf_counter() + time_limit
+
         # Iterative deepening (chessprogramming.org/Iterative_Deepening): search
         # depth 1, then 2, ... up to depth. Each search leaves its best moves in
         # the transposition table (and killer moves), so the next, deeper one
         # tries the best move first almost everywhere and cuts off much more.
         best_move = None
         for current_depth in range(1, depth + 1):
-            best_move = self.search_root(board, piece_moves, moves, current_depth, best_move)
+            depth_best, finished = self.search_root(board, piece_moves, moves, current_depth, best_move)
+            if depth_best is not None:
+                best_move = depth_best
+
+            # out of time: play the best move found so far
+            if not finished:
+                break
+
+        search_deadline = None
+
+        # ran out of time before even 1 move was searched
+        if best_move is None and len(moves) > 0:
+            best_move = moves[0]
         return best_move
 
     def search_root(self, board, piece_moves, moves, depth, previous_best):
+        # returns the best move, and whether the whole depth got searched
         alpha = -float('inf')
         beta = float('inf')
         best_move = None
         for (from_sq, to_sq) in order_moves(board, moves, best_move=previous_best):
             state = save_state(board)
             make_move(board, from_sq, to_sq)
-            score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
+            try:
+                score = -negamax(board, piece_moves, depth - 1, -beta, -alpha)
+            except SearchTimeout:
+                # out of time partway through this move: put the board back.
+                # the moves before it were searched fully, and the previous
+                # best move always goes first, so best_move is still good
+                restore_state(board, state)
+                return best_move, False
             restore_state(board, state)
             if score > alpha:
                 alpha = score
                 best_move = (from_sq, to_sq)
-        return best_move
+        return best_move, True
 
 

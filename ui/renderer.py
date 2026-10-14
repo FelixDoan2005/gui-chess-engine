@@ -43,6 +43,13 @@ class Renderer:
             for level in range(1, 6)
         }
 
+        # max time per engine move in seconds, None = unlimited
+        self.time_rects = {}
+        time_y = 300
+        for limit in [5, 10, 15, None]:
+            self.time_rects[limit] = pygame.Rect(BUTTON_X, time_y, BUTTON_W, BUTTON_H)
+            time_y += BUTTON_H + 20
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
@@ -77,6 +84,20 @@ class Renderer:
         for level, rect in self.difficulty_rects.items():
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(str(level), True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_time_select(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Time Per Move", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 180))
+
+        for limit, rect in self.time_rects.items():
+            if limit is None:
+                label = "Unlimited"
+            else:
+                label = f"{limit} seconds"
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
     def draw_thinking(self):

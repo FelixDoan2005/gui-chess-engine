@@ -39,8 +39,8 @@ def make_move_and_check_promotion(board, from_sq, to_sq):
         return moved_piece.split("_")[0]
     return None
 
-def run_engine_search(ai, search_board, piece_moves, depth, result):
-    result["move"] = ai.choose_move(search_board, piece_moves, depth=depth)
+def run_engine_search(ai, search_board, piece_moves, depth, time_limit, result):
+    result["move"] = ai.choose_move(search_board, piece_moves, depth=depth, time_limit=time_limit)
 
 def main():
     screen = create_window()
@@ -68,6 +68,7 @@ def main():
     mode = None
     player_colour = None
     depth = None
+    time_limit = None
     ai = None
     engine_thread = None
     engine_result = None
@@ -111,6 +112,15 @@ def main():
                 for level, rect in renderer.difficulty_rects.items():
                     if rect.collidepoint(click):
                         depth = DIFFICULTY_DEPTH[level]
+                        state = "time_select"
+                        break
+
+        elif state == "time_select":
+            renderer.draw_time_select()
+            if click:
+                for limit, rect in renderer.time_rects.items():
+                    if rect.collidepoint(click):
+                        time_limit = limit
                         ai = AI()
                         board = Board()
                         highlights = []
@@ -129,7 +139,7 @@ def main():
                     engine_result = {}
                     engine_thread = threading.Thread(
                         target=run_engine_search,
-                        args=(ai, search_board, piece_moves, depth, engine_result),
+                        args=(ai, search_board, piece_moves, depth, time_limit, engine_result),
                         daemon=True,
                     )
                     engine_thread.start()

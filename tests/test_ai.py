@@ -5,6 +5,7 @@ Run from the project root:
 """
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -75,6 +76,29 @@ def test_game_phase_counts_down_from_24():
     board = empty_board((7, 4), (0, 4), "white")
     board.grid[6][0] = "white_pawn"
     assert game_phase(board) == 0
+
+
+def test_time_limit_stops_the_search_in_time():
+    # depth 10 would take far longer than half a second
+    board = Board()
+    start = time.time()
+    move = AI().choose_move(board, piece_moves, 10, time_limit=0.5)
+    took = time.time() - start
+    assert move in get_all_legal_moves(board, piece_moves)
+    assert took < 1.5
+
+
+def test_time_limit_puts_the_board_back():
+    # the search gets cut off in the middle of a line, with moves still made
+    board = Board()
+    grid_before = [row[:] for row in board.grid]
+    history_before = list(board.history)
+    counts_before = dict(board.position_counts)
+    AI().choose_move(board, piece_moves, 10, time_limit=0.3)
+    assert board.grid == grid_before
+    assert board.history == history_before
+    assert board.position_counts == counts_before
+    assert board.turn == "white"
 
 
 def test_check_extension_finds_mate_in_2_at_depth_2():
