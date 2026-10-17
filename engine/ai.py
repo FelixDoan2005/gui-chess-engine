@@ -1070,15 +1070,13 @@ def check_time():
 # full search and sets the base. every other move only gets a yes/no check,
 # "does it beat the base?", using a window this narrow (in pawns). only a yes
 # gets searched again fully
-#
-# PVS:
 # fully searches one move and sets as base.
 # checks second move.
 # checks oponents responses.
 # If any of those responses > than base continue
 # If any of those responses < base skip.
-#  - because there is an option for < base oponent would force this path so pick base move.
-# If all responses > base high fail re search the second move
+#  - because there is an option for outcome < base the oponent would force this path so pick base move.
+# If all responses > base == high fail --> re-search the second move.
 PVS_WINDOW = 0.001
 
 
