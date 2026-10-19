@@ -1080,10 +1080,28 @@ def check_time():
 PVS_WINDOW = 0.001
 
 
-def search_child(board, piece_moves, depth, alpha, beta, first_move):
+# late move reductions (chessprogramming.org/Late_Move_Reductions): moves late
+# in the list are rarely the best, so quiet ones get searched 1 shallower
+# first. only if that still beats alpha do they get the normal search.
+# the usual setup: not the first few moves, not captures, promotions or
+# checks, not when in check, and only with enough depth left
+LMR_FULL_MOVES = 3
+LMR_MIN_DEPTH = 3
+LMR_REDUCTION = 1
+
+
+def search_child(board, piece_moves, depth, alpha, beta, first_move, reduce=False):
     # the move has already been made on the board
     if first_move:
         return -negamax(board, piece_moves, depth, -beta, -alpha)
+
+    # late move reduction: try it shallower first
+    if reduce:
+        score = -negamax(board, piece_moves, depth - LMR_REDUCTION, -alpha - PVS_WINDOW, -alpha)
+
+        # still doesn't beat alpha: no need for the normal search
+        if score <= alpha:
+            return score
 
     # yes/no check: does it beat alpha?
     score = -negamax(board, piece_moves, depth, -alpha - PVS_WINDOW, -alpha)
@@ -1137,13 +1155,30 @@ def negamax(board, piece_moves, depth, alpha, beta):
         return 0
 
     ply = len(board.history)
+    killers = killer_moves.get(ply, [])
     best_move_here = None
     first_move = True
-    for (from_sq, to_sq) in order_moves(board, moves, killer_moves.get(ply, []), best_move):
+    move_number = 0
+    for (from_sq, to_sq) in order_moves(board, moves, killers, best_move):
+        move_number += 1
         quiet = board.grid[to_sq[0]][to_sq[1]] is None
+        capture_or_promotion = is_capture_or_promotion(board, (from_sq, to_sq))
         state = save_state(board)
         make_move(board, from_sq, to_sq)
-        score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move)
+
+        # late move reduction: a quiet move late in the list
+        reduce = False
+        if (depth >= LMR_MIN_DEPTH and move_number > LMR_FULL_MOVES and not checked
+                and not capture_or_promotion and (from_sq, to_sq) not in killers):
+            # not a move that gives check
+            if board.turn == "white":
+                opponent_king = board.white_king
+            else:
+                opponent_king = board.black_king
+            if not in_check(board.grid, board.turn, opponent_king):
+                reduce = True
+
+        score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move, reduce)
         first_move = False
         restore_state(board, state)
 
