@@ -27,8 +27,8 @@ from engine.ai import AI, make_move
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, draw_reason
 
 DEPTH = 3
-OPENINGS = 500  # each played twice = 1,000 games, about 15 min at depth 3 on this PC
-REMOVED = {"knight_outposts", "bishop_pawn_pairs", "centre_control", "rook_open_files"}
+OPENINGS = 500  # each played twice = 1,000 games, about 80 min at depth 3 with quiescence search
+REMOVED = {"centre_control", "hanging_pieces", "knight_outposts", "bishop_pawn_pairs", "rook_open_files"}
 
 RESULTS_FILE = os.path.join(heuristic_test.TESTS_DIR, "simplification_results.txt")
 

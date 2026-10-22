@@ -45,13 +45,14 @@ import engine.ai as ai_module
 from engine.ai import AI, PIECE_VALUES, make_move
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, draw_reason
 
-DEPTHS = (1, 2, 3, 4)
+DEPTHS = (2, 3)
 
 # Openings per match at each depth. Each one is played twice (colours swapped),
 # so 500 openings = 1,000 games per match = 14,000 games per depth.
-# Measured on this PC (28 cores): depth 1 ~5 min, depth 2 ~20 min, depth 3 ~3 h.
-# A depth 4 game takes ~7x as long as depth 3, so it gets 100 openings (~4.5 h).
-OPENINGS_PER_MATCH = {1: 500, 2: 500, 3: 500, 4: 100}
+# Measured on this PC (28 cores), with quiescence search: a depth 2 game takes
+# ~13 s, so 250 openings ~1 h. A depth 3 game takes ~136 s, so 100 openings ~4 h.
+# Raise a number and run again to add more games to what's already saved.
+OPENINGS_PER_MATCH = {2: 250, 3: 100}
 
 OPENING_PLIES = 4       # random moves played before the engines take over
 MAX_PLIES = 1000        # safety net only; the draw rules end games well before this
@@ -503,7 +504,6 @@ def run():
     print(f"\nSaved to {SUMMARY_FILE}")
     print(f"     and {GRAPH_FILE}")
     save_graph(all_results(games), show=True)
-
 
 if __name__ == "__main__":
     run()
