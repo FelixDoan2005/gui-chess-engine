@@ -1,15 +1,19 @@
 import threading
 
+import chess
+import chess.engine
 import pygame
-from ui import create_window
-from ui import Renderer
-from ui import InputHandler
-from ui import FPS
-from ui import Board, pixel_to_square
+from ui.window import create_window
+from ui.renderer import Renderer
+from ui.input_handler import InputHandler
+from ui.constants import FPS
+from ui.chess_logic import Board, pixel_to_square
 from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves, draw_reason
-from engine.ai import AI, DIFFICULTY_DEPTH, clone_board
+from engine.ai import DIFFICULTY_DEPTH
+from engine.uci import engine_command, square_name, play_uci_move
 
 GAME_OVER_DISPLAY_MS = 5000
+PROMOTION_LETTERS = {"queen": "q", "rook": "r", "bishop": "b", "knight": "n"}
 
 
 
@@ -39,8 +43,19 @@ def make_move_and_check_promotion(board, from_sq, to_sq):
         return moved_piece.split("_")[0]
     return None
 
-def run_engine_search(ai, search_board, piece_moves, depth, time_limit, result):
-    result["move"] = ai.choose_move(search_board, piece_moves, depth=depth, time_limit=time_limit)
+def run_engine_search(engine, move_list, depth, time_limit, result):
+    # the engine runs as its own program (engine/uci.py): send it the game so
+    # far and wait for its move, e.g. "e7e5"
+    chess_board = chess.Board()
+    for uci in move_list:
+        chess_board.push_uci(uci)
+    try:
+        played = engine.play(chess_board, chess.engine.Limit(depth=depth, time=time_limit))
+        result["move"] = played.move.uci()
+    except chess.engine.EngineError:
+        result["move"] = None
+    except chess.engine.EngineTerminatedError:
+        result["move"] = None
 
 def main():
     screen = create_window()
@@ -69,7 +84,9 @@ def main():
     player_colour = None
     depth = None
     time_limit = None
-    ai = None
+    engine = None             # the engine program, started for the first game against it
+    move_list = []            # every move this game, e.g. ["e2e4", "e7e5"], for the engine
+    promotion_move = None     # a promotion waiting for its piece, e.g. "e7e8"
     engine_thread = None
     engine_result = None
 
@@ -85,8 +102,8 @@ def main():
                 if renderer.pvp_rect.collidepoint(click):
                     mode = "pvp"
                     player_colour = None
-                    ai = None
                     board = Board()
+                    move_list = []
                     highlights = []
                     selected_square = None
                     promotion_square = None
@@ -121,8 +138,10 @@ def main():
                 for limit, rect in renderer.time_rects.items():
                     if rect.collidepoint(click):
                         time_limit = limit
-                        ai = AI()
+                        if engine is None:
+                            engine = chess.engine.SimpleEngine.popen_uci(engine_command())
                         board = Board()
+                        move_list = []
                         highlights = []
                         selected_square = None
                         promotion_square = None
@@ -135,23 +154,24 @@ def main():
         elif state == "playing":
             if mode == "pve" and board.turn != player_colour:
                 if engine_thread is None:
-                    search_board = clone_board(board)
                     engine_result = {}
                     engine_thread = threading.Thread(
                         target=run_engine_search,
-                        args=(ai, search_board, piece_moves, depth, time_limit, engine_result),
+                        args=(engine, list(move_list), depth, time_limit, engine_result),
                         daemon=True,
                     )
                     engine_thread.start()
                 elif not engine_thread.is_alive():
                     move = engine_result.get("move")
                     engine_thread = None
-                    if move is not None:
-                        engine_from, engine_to = move
-                        promo_colour = make_move_and_check_promotion(board, engine_from, engine_to)
-                        if promo_colour is not None:
-                            row, col = engine_to
-                            board.grid[row][col] = f"{promo_colour}_queen"
+                    if move is None:
+                        # the engine program stopped answering
+                        game_result = ("Engine error", "the engine stopped responding")
+                        game_over_time = pygame.time.get_ticks()
+                        state = "game_over"
+                    else:
+                        play_uci_move(board, move)
+                        move_list.append(move)
 
                         result = check_game_end(board, piece_moves)
                         if result:
@@ -170,13 +190,17 @@ def main():
                         selected_square, highlights = select_piece(square, piece, board, piece_moves)
                     else:
                         if square in highlights:
+                            uci = square_name(selected_square) + square_name(square)
                             promo_colour = make_move_and_check_promotion(board, selected_square, square)
 
                             if promo_colour is not None:
+                                # added to move_list once the piece is picked
+                                promotion_move = uci
                                 promotion_square = square
                                 promotion_colour = promo_colour
                                 state = "promotion"
                             else:
+                                move_list.append(uci)
                                 result = check_game_end(board, piece_moves)
                                 if result:
                                     game_result = result
@@ -205,6 +229,8 @@ def main():
                     if rect.collidepoint(click):
                         row, col = promotion_square
                         board.grid[row][col] = f"{promotion_colour}_{kind}"
+                        move_list.append(promotion_move + PROMOTION_LETTERS[kind])
+                        promotion_move = None
                         promotion_square = None
                         promotion_colour = None
 
@@ -226,6 +252,9 @@ def main():
         pygame.display.flip()
         clock.tick(FPS)
 
+    # stop the engine program straight away, even if it's mid-search
+    if engine is not None:
+        engine.close()
     pygame.quit()
 
 if __name__ == "__main__":
