@@ -17,8 +17,8 @@ Needs: pip install chess, and Stockfish (stockfishchess.org): either on the
 PATH as "stockfish", or with the STOCKFISH_PATH setting pointing at it.
 
 Run from the project root (or click Run in VS Code):
-    python tests/stockfish_rating_test.py [seconds per move] [openings per level]
-    e.g. python tests/stockfish_rating_test.py 5 25
+    python tests/matches/stockfish_rating_test.py [seconds per move] [openings per level]
+    e.g. python tests/matches/stockfish_rating_test.py 5 25
 """
 import math
 import os
@@ -235,7 +235,7 @@ def run():
         time_per_move = float(sys.argv[1])
     if len(sys.argv) > 2:
         openings_per_level = int(sys.argv[2])
-    results_file = os.path.join(heuristic_test.TESTS_DIR, f"stockfish_rating_results_{time_per_move:g}s.txt")
+    results_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{time_per_move:g}s.txt")
 
     heuristic_test.keep_awake()
     tasks = []

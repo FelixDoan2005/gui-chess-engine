@@ -14,7 +14,7 @@ swapped.
               no clear effect: range includes 0.
 
 Run from the project root (or click Run in VS Code):
-    python tests/all_heuristics_test.py
+    python tests/matches/all_heuristics_test.py
 
 Every finished game is saved to GAMES_FILE, so you can stop at any time
 (Ctrl+C) and run it again later to carry on where it stopped. SUMMARY_FILE and
@@ -33,8 +33,10 @@ import sys
 import time
 from multiprocessing import Pool
 
-TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(TESTS_DIR)
+# this file is in tests/matches; results go in tests/results
+MATCHES_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(os.path.dirname(MATCHES_DIR), "results")
+ROOT = os.path.dirname(os.path.dirname(MATCHES_DIR))
 sys.path.insert(0, ROOT)
 
 # ui/__init__.py imports pygame, which would print its hello message once per
@@ -59,9 +61,9 @@ MAX_PLIES = 1000        # safety net only; the draw rules end games well before 
 ADJUDICATE_MARGIN = 3   # if the safety net is ever hit, this much material ahead = win
 SUMMARY_EVERY = 5 * 60  # seconds between summary updates while it runs
 
-GAMES_FILE = os.path.join(TESTS_DIR, "all_heuristics_games.jsonl")
-SUMMARY_FILE = os.path.join(TESTS_DIR, "all_heuristics_results.txt")
-GRAPH_FILE = os.path.join(TESTS_DIR, "all_heuristics_results.png")
+GAMES_FILE = os.path.join(RESULTS_DIR, "heuristics", "all_heuristics_games.jsonl")
+SUMMARY_FILE = os.path.join(RESULTS_DIR, "heuristics", "all_heuristics_results.txt")
+GRAPH_FILE = os.path.join(RESULTS_DIR, "heuristics", "all_heuristics_results.png")
 
 # The 6 heuristics evaluate() calls by name...
 FUNCTION_HEURISTICS = [

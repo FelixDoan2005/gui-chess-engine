@@ -3,7 +3,7 @@
   ps = pawn_structure, m = mobility, bp = bishop pair. Piece-square tables are always on.
 
 Run from the project root (or click Run in VS Code):
-    python tests/match_heuristics.py
+    python tests/archive/match_heuristics.py
 
 Results are printed and also saved to RESULTS_FILE.
 """
@@ -13,7 +13,7 @@ import sys
 import time
 from multiprocessing import Pool
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import engine.ai as ai_module
 from engine.ai import AI, PIECE_VALUES, make_move

@@ -13,7 +13,7 @@ If it fails, remove them one after another instead, running this test after
 each removal, to find which ones matter.
 
 Run from the project root (or click Run in VS Code):
-    python tests/simplification_test.py
+    python tests/matches/simplification_test.py
 """
 import os
 import sys
@@ -32,7 +32,7 @@ OPENINGS = 500  # each played twice = 1,000 games, about 80 min at depth 3 with 
 # and rook_open_files (PASS, see simplification_results.txt)
 REMOVED = set()
 
-RESULTS_FILE = os.path.join(heuristic_test.TESTS_DIR, "simplification_results.txt")
+RESULTS_FILE = os.path.join(heuristic_test.RESULTS_DIR, "simplification_results.txt")
 
 FULL = set(heuristic_test.HEURISTICS)
 SLIM = FULL - REMOVED

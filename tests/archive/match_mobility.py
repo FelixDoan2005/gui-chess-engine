@@ -1,7 +1,7 @@
 """Engine vs engine match: mobility ON vs mobility OFF.
 
 Run from the project root:
-    python tests/match_mobility.py
+    python tests/archive/match_mobility.py
 """
 import os
 import random
@@ -9,7 +9,7 @@ import sys
 import time
 from multiprocessing import Pool
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import engine.ai as ai_module
 from engine.ai import AI, PIECE_VALUES, make_move
