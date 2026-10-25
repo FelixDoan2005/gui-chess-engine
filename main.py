@@ -43,14 +43,16 @@ def make_move_and_check_promotion(board, from_sq, to_sq):
         return moved_piece.split("_")[0]
     return None
 
-def run_engine_search(engine, move_list, depth, time_limit, result):
+def run_engine_search(engine, move_list, depth, time_limit, game_number, result):
     # the engine runs as its own program (engine/uci.py): send it the game so
     # far and wait for its move, e.g. "e7e5"
     chess_board = chess.Board()
     for uci in move_list:
         chess_board.push_uci(uci)
     try:
-        played = engine.play(chess_board, chess.engine.Limit(depth=depth, time=time_limit))
+        # a new game_number tells the engine a new game started ("ucinewgame"),
+        # so it empties the table it keeps between moves
+        played = engine.play(chess_board, chess.engine.Limit(depth=depth, time=time_limit), game=game_number)
         result["move"] = played.move.uci()
     except chess.engine.EngineError:
         result["move"] = None
@@ -86,6 +88,7 @@ def main():
     time_limit = None
     engine = None             # the engine program, started for the first game against it
     move_list = []            # every move this game, e.g. ["e2e4", "e7e5"], for the engine
+    game_number = 0           # goes up each game against the engine
     promotion_move = None     # a promotion waiting for its piece, e.g. "e7e8"
     engine_thread = None
     engine_result = None
@@ -140,6 +143,7 @@ def main():
                         time_limit = limit
                         if engine is None:
                             engine = chess.engine.SimpleEngine.popen_uci(engine_command())
+                        game_number += 1
                         board = Board()
                         move_list = []
                         highlights = []
@@ -157,7 +161,7 @@ def main():
                     engine_result = {}
                     engine_thread = threading.Thread(
                         target=run_engine_search,
-                        args=(engine, list(move_list), depth, time_limit, engine_result),
+                        args=(engine, list(move_list), depth, time_limit, game_number, engine_result),
                         daemon=True,
                     )
                     engine_thread.start()

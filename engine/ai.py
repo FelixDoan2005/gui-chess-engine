@@ -630,7 +630,8 @@ def order_moves(board, moves, killers=(), best_move=None):
 EXACT = 0        # the real score
 LOWER_BOUND = 1  # a move reached beta, so the real score is at least this
 UPPER_BOUND = 2  # no move beat alpha, so the real score is at most this
-transposition_table = {}  # emptied at the start of every choose_move
+transposition_table = {}  # kept between moves in a game when choose_move is asked to (see AI)
+MAX_TABLE_SIZE = 500000   # entries: past this it's emptied, so memory can't keep growing
 
 
 def remember_position(key, depth, score, flag, best_move):
@@ -1003,11 +1004,20 @@ def negamax(board, piece_moves, depth, alpha, beta):
 
 
 class AI:
-    def choose_move(self, board, piece_moves, depth, time_limit=None):
-        # Fresh tables for every move, so nothing carries over between moves
-        # (or between two engines with different heuristics in a test match).
+    def new_game(self):
+        # nothing from the last game carries over
         killer_moves.clear()
         transposition_table.clear()
+
+    def choose_move(self, board, piece_moves, depth, time_limit=None, keep_table=False):
+        # keep_table: keep the transposition table from earlier moves in this
+        # game, so positions already worked out aren't searched again (the UCI
+        # engine does this). Left off, the table starts empty every move, which
+        # test matches need when two engines with different heuristics take
+        # turns in the same program.
+        killer_moves.clear()
+        if not keep_table or len(transposition_table) > MAX_TABLE_SIZE:
+            transposition_table.clear()
         moves = get_all_legal_moves(board, piece_moves)
 
         # checks can extend a line to at most twice the depth

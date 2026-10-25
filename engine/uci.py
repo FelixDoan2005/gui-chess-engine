@@ -120,17 +120,19 @@ def main():
         command = words[0]
         if command == "uci":
             print("id name gui-chess-engine")
-            print("id author Felix Doan") #me hehe
+            print("id author Felix Doan") # me hehe
             print("uciok", flush=True)
         elif command == "isready":
             print("readyok", flush=True)
         elif command == "ucinewgame":
             board = Board()
+            ai.new_game()
         elif command == "position":
             board = set_position(words)
         elif command == "go":
             depth, time_limit = search_limits(words, board)
-            move = ai.choose_move(board, piece_moves, depth, time_limit=time_limit)
+            # keep what earlier moves in this game worked out
+            move = ai.choose_move(board, piece_moves, depth, time_limit=time_limit, keep_table=True)
             if move is None:
                 print("bestmove 0000", flush=True)  # no legal moves
             else:
