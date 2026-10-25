@@ -1,7 +1,7 @@
 """How much does each evaluation heuristic add? Engine-vs-engine matches.
 
-For each of the 13 heuristics, the full engine (all 13 on) plays the same
-engine with only that heuristic switched off. One more match, all 13 vs none
+For each heuristic, the full engine (all of them on) plays the same
+engine with only that heuristic switched off. One more match, all vs none
 (material only), shows what they add together. Everything else is identical:
 same search, same depth, same openings, each opening played twice with colours
 swapped.
@@ -63,25 +63,20 @@ GAMES_FILE = os.path.join(TESTS_DIR, "all_heuristics_games.jsonl")
 SUMMARY_FILE = os.path.join(TESTS_DIR, "all_heuristics_results.txt")
 GRAPH_FILE = os.path.join(TESTS_DIR, "all_heuristics_results.png")
 
-# The 11 heuristics evaluate() calls by name...
+# The 6 heuristics evaluate() calls by name...
 FUNCTION_HEURISTICS = [
     "mobility",
     "pawn_structure",
     "bishop_pair",
     "mop_up",
-    "rook_open_files",
-    "knight_outposts",
-    "bishop_pawn_pairs",
     "king_pawn_shield",
     "king_attackers",
-    "hanging_pieces",
-    "centre_control",
 ]
 # ...and the 2 that work through piece_square_value.
 HEURISTICS = ["piece_square_tables", "king_endgame_table"] + FUNCTION_HEURISTICS
 
 # One match per heuristic, named after the heuristic the other engine is
-# missing, plus all 13 vs none.
+# missing, plus all vs none.
 NONE = "none"
 MATCHES = [NONE] + HEURISTICS
 
@@ -334,7 +329,7 @@ def table_row(name, result):
 
 def summary_lines(games, by_depth):
     lines = [
-        "Full engine (all 13 heuristics) vs the same engine without one of them.",
+        f"Full engine (all {len(HEURISTICS)} heuristics) vs the same engine without one of them.",
         "Score = wins + half the draws, for the full engine. Elo above 0 = the heuristic makes it stronger.",
         "helps = whole 95% range above 0, hurts = whole range below 0, no clear effect = range includes 0.",
     ]
@@ -349,7 +344,7 @@ def summary_lines(games, by_depth):
         lines += ["", title, header]
 
         if results[NONE] is not None:
-            lines.append(table_row("ALL 13 vs none", results[NONE]))
+            lines.append(table_row(f"ALL {len(HEURISTICS)} vs none", results[NONE]))
             lines.append("  " + "-" * 87)
 
         ranked = [name for name in HEURISTICS if results[name] is not None]
@@ -397,7 +392,7 @@ def save_graph(by_depth, show=False):
         ax.axvline(0, color="black", linewidth=0.8)
         title = f"Depth {depth}"
         if results[NONE] is not None:
-            title += f"   (all 13 vs none: {results[NONE]['elo']:+.0f} Elo)"
+            title += f"   (all {len(HEURISTICS)} vs none: {results[NONE]['elo']:+.0f} Elo)"
         ax.set_title(title)
         ax.set_xlabel("Elo the heuristic adds, with 95% range")
 

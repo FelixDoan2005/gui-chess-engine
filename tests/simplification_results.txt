@@ -1,6 +1,6 @@
-Simplification test at depth 3: full engine (all 13) vs without bishop_pawn_pairs, centre_control, knight_outposts, rook_open_files
-  1,000 games: 482 W / 27 D / 491 L for the full engine, score 49.5%
-  Elo the 4 removed heuristics add together: -3   95% range [-23, +17]
-  Time per move: full 0.466s, without them 0.387s (17% faster)
-  Games ended by: checkmate 97%, insufficient material 2%, stalemate 0%, threefold repetition 0%, 50-move rule 0%
+Simplification test at depth 3: full engine (all 13) vs without bishop_pawn_pairs, centre_control, hanging_pieces, knight_outposts, rook_open_files
+  1,000 games: 461 W / 108 D / 431 L for the full engine, score 51.5%
+  Elo the 5 removed heuristics add together: +10   95% range [-10, +31]
+  Time per move: full 1.367s, without them 1.149s (16% faster)
+  Games ended by: checkmate 89%, threefold repetition 7%, 50-move rule 2%, insufficient material 2%, stalemate 0%
   PASS: no proof they help, so it's safe to remove them

@@ -148,10 +148,8 @@ def evaluate(board):
             score -= total_gain
 
     return (score + mobility(board, weight, pieces) + pawn_structure(board, weight, files)
-            + bishop_pair(board, weight) + mop_up(board) + rook_open_files(board)
-            + knight_outposts(board, files) + bishop_pawn_pairs(board, weight, files)
-            + king_pawn_shield(board, pieces) + king_attackers(board, weight, pieces)
-            + hanging_pieces(board, weight, pieces) + centre_control(board, weight, pieces))
+            + bishop_pair(board, weight) + mop_up(board)
+            + king_pawn_shield(board, pieces) + king_attackers(board, weight, pieces))
 
 
 # Points per safe move, from Fruit 2.1 (eval.cpp KnightMob/BishopMob/RookMob/
@@ -376,137 +374,6 @@ def bishop_pair(board, weight=None):
     return score
 
 
-# chessprogramming.org/Rook_on_Open_File: open-file bonuses range 8-20
-# centipawns (20 from Toga); a semi-open file typically gets half. Fruit 2.1
-# uses the same: RookOpenFile 20, RookSemiOpenFile 10.
-ROOK_OPEN_FILE_BONUS = 0.20       # no pawns at all on the rook's column
-ROOK_SEMI_OPEN_FILE_BONUS = 0.10  # only enemy pawns on the rook's column
-
-
-def rook_open_files(board):
-    white_pawn_cols = set()
-    black_pawn_cols = set()
-    rooks = []
-    for r in range(8):
-        for c in range(8):
-            piece = board.grid[r][c]
-            if piece == "white_pawn":
-                white_pawn_cols.add(c)
-            elif piece == "black_pawn":
-                black_pawn_cols.add(c)
-            elif piece in ("white_rook", "black_rook"):
-                rooks.append((piece, c))
-
-    score = 0
-    for piece, col in rooks:
-        if piece == "white_rook":
-            own_pawns, enemy_pawns, sign = white_pawn_cols, black_pawn_cols, 1
-        else:
-            own_pawns, enemy_pawns, sign = black_pawn_cols, white_pawn_cols, -1
-
-        if col in own_pawns:
-            continue  # closed: blocked by its own pawn
-        if col in enemy_pawns:
-            score += sign * ROOK_SEMI_OPEN_FILE_BONUS
-        else:
-            score += sign * ROOK_OPEN_FILE_BONUS
-    return score
-
-
-def defended_by_own_pawn(grid, row, col, colour):
-    if colour == "white":
-        pawn_row = row + 1
-    else:
-        pawn_row = row - 1
-    if not 0 <= pawn_row <= 7:
-        return False
-    for pawn_col in (col - 1, col + 1):
-        if 0 <= pawn_col <= 7 and grid[pawn_row][pawn_col] == f"{colour}_pawn":
-            return True
-    return False
-
-
-def attackable_by_enemy_pawn(row, col, colour, enemy_files):
-    # True if an enemy pawn on a neighbouring column is still behind this
-    # square (from the enemy's side), so it could advance and attack it.
-    for pawn_col in (col - 1, col + 1):
-        for pawn_row in enemy_files.get(pawn_col, []):
-            if colour == "white" and pawn_row < row:
-                return True
-            if colour == "black" and pawn_row > row:
-                return True
-    return False
-
-
-# chessprogramming.org/Outposts: a strong square in the centre or enemy half,
-# defended by an own pawn and no longer attackable by enemy pawns. Toga gives
-# a central knight outpost 10 centipawns.
-KNIGHT_OUTPOST_BONUS = 0.10
-OUTPOST_ROWS = {"white": (2, 3, 4), "black": (3, 4, 5)}
-
-
-def knight_outposts(board, files=None):
-    grid = board.grid
-    if files is None:
-        files = both_pawn_files(grid)
-    enemy_files = {"white": files["black"], "black": files["white"]}
-    score = 0
-    for r in range(8):
-        for c in range(8):
-            piece = grid[r][c]
-            if piece not in ("white_knight", "black_knight"):
-                continue
-            colour = piece.split("_")[0]
-            if r not in OUTPOST_ROWS[colour]:
-                continue
-            if not defended_by_own_pawn(grid, r, c, colour):
-                continue
-            if attackable_by_enemy_pawn(r, c, colour, enemy_files[colour]):
-                continue
-            if colour == "white":
-                score += KNIGHT_OUTPOST_BONUS
-            else:
-                score -= KNIGHT_OUTPOST_BONUS
-    return score
-
-
-# Late game (your idea): a bishop standing on a square its own pawn guards.
-# The pawn defends the bishop and, being diagonally next to it, the bishop
-# defends the pawn. Only counts if no enemy pawn can ever attack the bishop.
-# That is a bishop outpost, so the value is Stockfish 11's (evaluate.cpp
-# Outpost = S(30, 21), applied once for a bishop): the endgame 21, divided by
-# its endgame pawn value 213, faded in by endgame_weight so it only counts in
-# the late game. Being central is already rewarded by the bishop
-# piece-square table.
-BISHOP_PAWN_PAIR_BONUS = 21 / 213
-
-
-def bishop_pawn_pairs(board, weight=None, files=None):
-    if weight is None:
-        weight = endgame_weight(board)
-    grid = board.grid
-    if files is None:
-        files = both_pawn_files(grid)
-    bonus = BISHOP_PAWN_PAIR_BONUS * weight
-    enemy_files = {"white": files["black"], "black": files["white"]}
-    score = 0
-    for r in range(8):
-        for c in range(8):
-            piece = grid[r][c]
-            if piece not in ("white_bishop", "black_bishop"):
-                continue
-            colour = piece.split("_")[0]
-            if not defended_by_own_pawn(grid, r, c, colour):
-                continue
-            if attackable_by_enemy_pawn(r, c, colour, enemy_files[colour]):
-                continue
-            if colour == "white":
-                score += bonus
-            else:
-                score -= bonus
-    return score
-
-
 # King safety is scaled by the opponent's material, as chessprogramming.org/
 # King_Safety describes (TSCP does this), so it matters most while the enemy
 # still has attackers and fades as they come off.
@@ -657,69 +524,6 @@ def piece_coverage(grid):
                 colour, kind = piece.split("_")
                 pieces.append((r, c, colour, kind, squares_covered_by(grid, r, c, colour, kind)))
     return pieces
-
-
-# Per hanging piece, from Stockfish 11 (evaluate.cpp Hanging = S(69, 36)),
-# converted to pawns with its pawn values (128 middlegame, 213 endgame).
-# Stockfish also counts some pieces defended once but attacked twice; this only
-# counts pieces that are attacked and not defended at all.
-HANGING_PIECE_PENALTY = {"middlegame": 69 / 128, "endgame": 36 / 213}
-
-
-def hanging_pieces(board, weight=None, pieces=None):
-    if weight is None:
-        weight = endgame_weight(board)
-    if pieces is None:
-        pieces = piece_coverage(board.grid)
-    penalty = blend(HANGING_PIECE_PENALTY["middlegame"], HANGING_PIECE_PENALTY["endgame"], weight)
-
-    covered = {"white": set(), "black": set()}  # every square each side attacks or defends
-    for _, _, colour, _, squares in pieces:
-        covered[colour].update(squares)
-
-    score = 0
-    for r, c, colour, kind, _ in pieces:
-        if kind == "king":
-            continue
-        if colour == "white":
-            enemy = "black"
-        else:
-            enemy = "white"
-        if (r, c) in covered[enemy] and (r, c) not in covered[colour]:
-            if colour == "white":
-                score -= penalty
-            else:
-                score += penalty
-    return score
-
-
-# Lyudmil Tsvetkov, Little Chess Evaluation Compendium (2012): +10 centipawns
-# for each centre square (d4, e4, d5, e5) that each piece or pawn controls, e.g.
-# a knight on f3 covering d4 and e5 gets +20. About 25% lower in the endgame
-# (the compendium says "at least" for pawns; applied to all pieces here).
-CENTRE_SQUARES = [(3, 3), (3, 4), (4, 3), (4, 4)]   # d5, e5, d4, e4
-CENTRE_CONTROL_BONUS = {"middlegame": 0.10, "endgame": 0.075}
-
-
-def centre_control(board, weight=None, pieces=None):
-    if weight is None:
-        weight = endgame_weight(board)
-    if pieces is None:
-        pieces = piece_coverage(board.grid)
-    per_square = blend(CENTRE_CONTROL_BONUS["middlegame"], CENTRE_CONTROL_BONUS["endgame"], weight)
-
-    score = 0
-    for _, _, colour, _, covered in pieces:
-        controlled = 0
-        for square in CENTRE_SQUARES:
-            if square in covered:
-                controlled += 1
-        value = controlled * per_square
-        if colour == "white":
-            score += value
-        else:
-            score -= value
-    return score
 
 
 # Mop-up evaluation, from Chess 4.x (Slate & Atkin, 1977) via

@@ -1,6 +1,6 @@
 """Simplification test: is the engine just as strong without these heuristics?
 
-The full engine (all 13 heuristics) plays the same engine with REMOVED
+The full engine (all heuristics) plays the same engine with REMOVED
 switched off, from the same openings as all_heuristics_test.py, each played
 twice with colours swapped. It also times both engines.
 
@@ -9,9 +9,8 @@ twice with colours swapped. It also times both engines.
          it's safe to remove them.
   FAIL = the whole range is above 0: together they do help, so keep them.
 
-If it fails, remove them one after another instead (bishop_pawn_pairs, then
-knight_outposts, then centre_control, then rook_open_files), running this
-test after each removal, to find which combination matters.
+If it fails, remove them one after another instead, running this test after
+each removal, to find which ones matter.
 
 Run from the project root (or click Run in VS Code):
     python tests/simplification_test.py
@@ -28,7 +27,10 @@ from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, dr
 
 DEPTH = 3
 OPENINGS = 500  # each played twice = 1,000 games, about 80 min at depth 3 with quiescence search
-REMOVED = {"centre_control", "hanging_pieces", "knight_outposts", "bishop_pawn_pairs", "rook_open_files"}
+# heuristics to test removing, e.g. {"bishop_pair", "king_attackers"}. the last
+# test removed centre_control, hanging_pieces, knight_outposts, bishop_pawn_pairs
+# and rook_open_files (PASS, see simplification_results.txt)
+REMOVED = set()
 
 RESULTS_FILE = os.path.join(heuristic_test.TESTS_DIR, "simplification_results.txt")
 
@@ -122,7 +124,7 @@ def report_lines(games):
         verdict = "PASS: no proof they help, so it's safe to remove them"
 
     return [
-        f"Simplification test at depth {DEPTH}: full engine (all 13) vs without "
+        f"Simplification test at depth {DEPTH}: full engine (all {len(FULL)}) vs without "
         f"{', '.join(sorted(REMOVED))}",
         f"  {result['games']:,} games: {result['wins']} W / {result['draws']} D / {result['losses']} L "
         f"for the full engine, score {result['score']:.1%}",
@@ -135,6 +137,10 @@ def report_lines(games):
 
 
 def run():
+    if len(REMOVED) == 0:
+        sys.exit("Put the heuristics to test removing in REMOVED first. "
+                 f"Choose from: {', '.join(heuristic_test.HEURISTICS)}")
+
     unknown = REMOVED - FULL
     if unknown:
         sys.exit(f"Not heuristic names: {', '.join(sorted(unknown))}. "

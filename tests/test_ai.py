@@ -10,9 +10,9 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from engine.ai import AI, CHECKMATE_SCORE, negamax, quiescence, game_phase, make_move, pawn_files, bishop_pair, BISHOP_PAIR_BONUS, piece_square_value, evaluate, mop_up, centre_distance
-from engine.ai import rook_open_files, ROOK_OPEN_FILE_BONUS, ROOK_SEMI_OPEN_FILE_BONUS, pawn_structure
-from engine.ai import knight_outposts, bishop_pawn_pairs, BISHOP_PAWN_PAIR_BONUS, king_pawn_shield, king_attackers
-from engine.ai import hanging_pieces, centre_control, endgame_weight, blend
+from engine.ai import pawn_structure
+from engine.ai import king_pawn_shield, king_attackers
+from engine.ai import endgame_weight, blend
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves, in_check, draw_reason, insufficient_material, select_piece
 
 
@@ -288,24 +288,6 @@ def test_black_loses_castling_when_rook_captured_at_home():
     assert (0, 2) not in king_legal_moves(board, "black")
 
 
-def test_rook_open_and_semi_open_files():
-    board = empty_board((7, 4), (0, 4), "white")
-    board.grid[7][0] = "white_rook"          # column 0: no pawns -> open
-    assert rook_open_files(board) == ROOK_OPEN_FILE_BONUS
-
-    board.grid[1][0] = "black_pawn"          # enemy pawn only -> semi-open
-    assert rook_open_files(board) == ROOK_SEMI_OPEN_FILE_BONUS
-
-    board.grid[6][0] = "white_pawn"          # own pawn -> closed
-    assert rook_open_files(board) == 0
-
-
-def test_rook_open_file_is_negative_for_black():
-    board = empty_board((7, 4), (0, 4), "black")
-    board.grid[0][7] = "black_rook"
-    assert rook_open_files(board) == -ROOK_OPEN_FILE_BONUS
-
-
 def test_passed_pawn_bonus_grows_as_it_advances():
     def lone_white_pawn(row):
         board = empty_board((7, 4), (0, 4), "white")
@@ -319,42 +301,6 @@ def test_passed_pawn_bonus_grows_as_it_advances():
 
 def close(a, b):
     return abs(a - b) < 1e-9
-
-
-def test_knight_outpost():
-    board = empty_board((7, 4), (0, 4), "white")
-    board.grid[3][3] = "white_knight"    # d5
-    board.grid[4][2] = "white_pawn"      # c4 defends it
-    assert close(knight_outposts(board), 0.10)
-
-    board.grid[1][2] = "black_pawn"      # c7 could advance to c6 and attack d5
-    assert knight_outposts(board) == 0
-
-
-def test_knight_outpost_needs_a_defending_pawn():
-    board = empty_board((7, 4), (0, 4), "white")
-    board.grid[3][3] = "white_knight"
-    assert knight_outposts(board) == 0
-
-
-def test_bishop_pawn_pair():
-    def pair(bishop, pawn):
-        board = empty_board((7, 4), (0, 4), "white")
-        board.grid[bishop[0]][bishop[1]] = "white_bishop"
-        board.grid[pawn[0]][pawn[1]] = "white_pawn"
-        return board
-
-    assert close(bishop_pawn_pairs(pair((3, 3), (4, 4)), 1.0), 21 / 213)   # bishop d5, pawn e4
-    assert close(bishop_pawn_pairs(pair((5, 1), (6, 0)), 1.0), 21 / 213)   # bishop b3, pawn a2
-
-
-def test_bishop_pawn_pair_fades_in_towards_the_endgame():
-    board = empty_board((7, 4), (0, 4), "white")
-    board.grid[3][3] = "white_bishop"
-    board.grid[4][4] = "white_pawn"
-    assert bishop_pawn_pairs(board, 0.0) == 0                              # full middlegame: nothing
-    assert close(bishop_pawn_pairs(board, 0.5), BISHOP_PAWN_PAIR_BONUS / 2)
-    assert close(bishop_pawn_pairs(board), BISHOP_PAWN_PAIR_BONUS * endgame_weight(board))
 
 
 def test_king_pawn_shield():
@@ -418,35 +364,6 @@ def test_king_attackers():
     board.grid[3][7] = None
     board.grid[0][7] = "black_knight"              # h8 knight, not aimed at g1
     assert king_attackers(board, 0.0) == 0         # one attacker alone counts 0
-
-
-def test_hanging_pieces():
-    board = empty_board((7, 4), (0, 4), "white")
-    board.grid[4][4] = "white_knight"      # e4 knight
-    board.grid[1][4] = "black_rook"        # e7 rook attacks it down the file
-    assert close(hanging_pieces(board, 0.0), -69 / 128)   # middlegame
-    assert close(hanging_pieces(board, 1.0), -36 / 213)   # endgame
-
-    board.grid[5][3] = "white_pawn"        # d3 pawn now defends e4
-    assert hanging_pieces(board, 0.0) == 0
-
-
-def test_centre_control():
-    assert centre_control(Board()) == 0                          # symmetric start
-
-    board = empty_board((7, 0), (0, 7), "white")
-    board.grid[5][3] = "white_pawn"                              # d3 pawn covers c4 and e4
-    assert close(centre_control(board, 0.0), 0.10)               # only e4 is a centre square
-    assert close(centre_control(board, 1.0), 0.075)              # 25% lower in the endgame
-
-    board.grid[2][4] = "black_pawn"                              # e6 pawn covers d5 and f5
-    assert close(centre_control(board, 0.0), 0.0)
-
-
-def test_centre_control_knight_example_from_compendium():
-    board = empty_board((7, 0), (0, 7), "white")
-    board.grid[5][5] = "white_knight"                            # Nf3 covers d4 and e5
-    assert close(centre_control(board, 0.0), 0.20)
 
 
 def test_threefold_repetition_is_a_draw():
