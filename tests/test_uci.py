@@ -9,7 +9,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from engine.uci import play_uci_move, move_to_uci, set_position, search_limits
+import json
+import tempfile
+
+import engine.ai as ai
+from engine.tuning import get_params, set_params
+from engine.uci import play_uci_move, move_to_uci, set_position, search_limits, load_tuned_params
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves
 
 UCI_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "engine", "uci.py")
@@ -52,6 +57,24 @@ def test_castling_en_passant_and_underpromotion():
     board.grid[0][0] = None
     play_uci_move(board, "a7a8n")
     assert board.grid[0][0] == "white_knight"
+
+
+def test_engine_loads_tuned_numbers():
+    # ENGINE_PARAMS points at a file saved by the tuning: the engine uses those numbers
+    start = get_params(ai)
+    tuned = list(start)
+    tuned[0] = 3.25   # PIECE_VALUES[knight]
+    path = os.path.join(tempfile.mkdtemp(), "tuned_params.json")
+    with open(path, "w") as f:
+        json.dump({"after": tuned}, f)
+    os.environ["ENGINE_PARAMS"] = path
+    try:
+        assert load_tuned_params()
+        assert ai.PIECE_VALUES["knight"] == 3.25
+    finally:
+        del os.environ["ENGINE_PARAMS"]
+        set_params(ai, start)
+    assert ai.PIECE_VALUES["knight"] == 3
 
 
 def test_search_limits():

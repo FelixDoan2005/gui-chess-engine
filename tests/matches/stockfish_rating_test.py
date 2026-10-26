@@ -22,7 +22,6 @@ Run from the project root (or click Run in VS Code):
 """
 import math
 import os
-import shutil
 import sys
 import time
 from multiprocessing import Pool
@@ -32,7 +31,7 @@ import chess.engine
 
 import all_heuristics_test as heuristic_test  # same folder; also puts the project on sys.path
 
-from engine.uci import engine_command, move_to_uci, play_uci_move
+from engine.uci import engine_command, stockfish_path, move_to_uci, play_uci_move
 from ui.chess_logic import Board
 
 ELO_LEVELS = [1500, 1750, 2000, 2250]
@@ -43,12 +42,10 @@ MAX_PLIES = 500          # safety net; the draw rules end games well before this
 FEN_LETTERS = {"pawn": "p", "knight": "n", "bishop": "b", "rook": "r", "queen": "q", "king": "k"}
 
 
-def stockfish_path():
-    # the STOCKFISH_PATH setting if it's set, otherwise "stockfish" on the PATH
-    path = os.environ.get("STOCKFISH_PATH")
-    if path is not None and os.path.exists(path):
-        return path
-    return shutil.which("stockfish")
+def tuned_note():
+    if os.environ.get("ENGINE_PARAMS") is not None:
+        return ", tuned numbers"
+    return ""
 
 
 def board_fen(board):
@@ -180,7 +177,7 @@ def points_spread(games):
 
 def report_lines(games, time_per_move, minutes):
     lines = [
-        f"Engine (on {os.path.basename(engine_command()[0])}) vs Stockfish capped to set Elo levels, "
+        f"Engine (on {os.path.basename(engine_command()[0])}{tuned_note()}) vs Stockfish capped to set Elo levels, "
         f"{time_per_move:g}s per move each, {len(games)} games in {minutes:.0f} min",
         "",
         f"  {'Stockfish Elo':>13}   {'W /  D /  L':>11}   {'score':>6}   rating it implies on its own",
@@ -235,7 +232,12 @@ def run():
         time_per_move = float(sys.argv[1])
     if len(sys.argv) > 2:
         openings_per_level = int(sys.argv[2])
-    results_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{time_per_move:g}s.txt")
+    # with tuned numbers (the ENGINE_PARAMS setting, see engine/uci.py), keep the results apart
+    label = ""
+    if os.environ.get("ENGINE_PARAMS") is not None:
+        label = "_tuned"
+        print(f"Engine uses tuned numbers from: {os.environ.get('ENGINE_PARAMS')}")
+    results_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{time_per_move:g}s{label}.txt")
 
     heuristic_test.keep_awake()
     tasks = []

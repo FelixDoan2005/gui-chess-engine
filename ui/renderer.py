@@ -21,6 +21,7 @@ class Renderer:
 
         self.pvp_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
         self.pve_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
+        self.evs_rect = pygame.Rect(BUTTON_X, 520, BUTTON_W, BUTTON_H)
 
         self.promotion_pieces = ["queen", "rook", "bishop", "knight"]
         promo_total_w = SQUARE_SIZE * len(self.promotion_pieces)
@@ -50,6 +51,13 @@ class Renderer:
             self.time_rects[limit] = pygame.Rect(BUTTON_X, time_y, BUTTON_W, BUTTON_H)
             time_y += BUTTON_H + 20
 
+        # Stockfish's strength: an Elo cap, None = full strength
+        self.stockfish_rects = {}
+        stockfish_y = 220
+        for elo in [1400, 1700, 2000, 2300, 2600, None]:
+            self.stockfish_rects[elo] = pygame.Rect(BUTTON_X, stockfish_y, BUTTON_W, BUTTON_H)
+            stockfish_y += BUTTON_H + 15
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
@@ -58,19 +66,20 @@ class Renderer:
         for rect, label in [
             (self.pvp_rect, "Player vs Player"),
             (self.pve_rect, "Player vs Engine"),
+            (self.evs_rect, "Engine vs Stockfish"),
         ]:
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_colour_select(self):
+    def draw_colour_select(self, heading="Choose Your Colour", white_label="Play as White", black_label="Play as Black"):
         self.screen.fill((30, 30, 30))
-        title = self.font_large.render("Choose Your Colour", True, (255, 255, 255))
+        title = self.font_large.render(heading, True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
 
         for rect, label in [
-            (self.white_rect, "Play as White"),
-            (self.black_rect, "Play as Black"),
+            (self.white_rect, white_label),
+            (self.black_rect, black_label),
         ]:
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
@@ -86,13 +95,16 @@ class Renderer:
             text = self.font_med.render(str(level), True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_time_select(self):
+    def draw_time_select(self, include_unlimited=True):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Per Move", True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 180))
 
         for limit, rect in self.time_rects.items():
             if limit is None:
+                # Stockfish would think forever with no limit
+                if not include_unlimited:
+                    continue
                 label = "Unlimited"
             else:
                 label = f"{limit} seconds"
@@ -100,9 +112,28 @@ class Renderer:
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_thinking(self):
-        text = self.font_med.render("Engine is thinking...", True, (255, 255, 0))
+    def draw_stockfish_select(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Stockfish Strength", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 120))
+
+        for elo, rect in self.stockfish_rects.items():
+            if elo is None:
+                label = "Full strength"
+            else:
+                label = f"{elo} Elo"
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_thinking(self, label="Engine is thinking..."):
+        text = self.font_med.render(label, True, (255, 255, 0))
         self.screen.blit(text, (10, 10))
+
+    def draw_caption(self, label):
+        # a line under the board, e.g. who is playing who
+        text = self.font_med.render(label, True, (255, 255, 255))
+        self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT - 55))
 
     def draw_game_over_popup(self, title, reason):
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)

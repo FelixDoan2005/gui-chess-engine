@@ -15,7 +15,9 @@ import sys
 ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(ENGINE_DIR))
 
+import engine.ai as ai_module
 from engine.ai import AI
+from engine.tuning import load_params
 from ui.chess_logic import Board, piece_moves
 
 MAX_DEPTH = 20  # when there's only a time limit, the time decides
@@ -36,6 +38,15 @@ def engine_command():
                 python = found
                 break
     return [python, os.path.join(ENGINE_DIR, "uci.py")]
+
+
+def stockfish_path():
+    # the STOCKFISH_PATH setting if it's set, otherwise "stockfish" on the PATH
+    # (None if it can't be found): used by Engine vs Stockfish and the rating test
+    path = os.environ.get("STOCKFISH_PATH")
+    if path is not None and os.path.exists(path):
+        return path
+    return shutil.which("stockfish")
 
 
 def square_name(square):
@@ -106,7 +117,18 @@ def search_limits(words, board):
     return depth, time_limit
 
 
+def load_tuned_params():
+    # tuned evaluation numbers, if the ENGINE_PARAMS setting points at a file
+    # saved by the tuning (tests/tuning); otherwise the ones in engine/ai.py
+    path = os.environ.get("ENGINE_PARAMS")
+    if path is not None and os.path.exists(path):
+        load_params(ai_module, path)
+        return True
+    return False
+
+
 def main():
+    load_tuned_params()
     board = Board()
     ai = AI()
     while True:
