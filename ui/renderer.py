@@ -35,14 +35,15 @@ class Renderer:
         self.white_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
         self.black_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
 
-        DIFF_BTN, DIFF_GAP = 60, 10
-        diff_total_w = DIFF_BTN * 5 + DIFF_GAP * 4
+        # difficulty 1-5 (search depth), and "max": no depth limit, only the time per move
+        DIFF_BTN, DIFF_GAP = 70, 10
+        levels = [1, 2, 3, 4, 5, "max"]
+        diff_total_w = DIFF_BTN * len(levels) + DIFF_GAP * (len(levels) - 1)
         diff_x = WIDTH // 2 - diff_total_w // 2
         diff_y = HEIGHT // 2 - DIFF_BTN // 2
-        self.difficulty_rects = {
-            level: pygame.Rect(diff_x + (level - 1) * (DIFF_BTN + DIFF_GAP), diff_y, DIFF_BTN, DIFF_BTN)
-            for level in range(1, 6)
-        }
+        self.difficulty_rects = {}
+        for i in range(len(levels)):
+            self.difficulty_rects[levels[i]] = pygame.Rect(diff_x + i * (DIFF_BTN + DIFF_GAP), diff_y, DIFF_BTN, DIFF_BTN)
 
         # max time per engine move in seconds, None = unlimited
         self.time_rects = {}
@@ -91,8 +92,12 @@ class Renderer:
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
 
         for level, rect in self.difficulty_rects.items():
+            if level == "max":
+                label = "Max"
+            else:
+                label = str(level)
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
-            text = self.font_med.render(str(level), True, (255, 255, 255))
+            text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
     def draw_time_select(self, include_unlimited=True):

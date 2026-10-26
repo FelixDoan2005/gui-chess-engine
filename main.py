@@ -154,7 +154,11 @@ def main():
             if click:
                 for level, rect in renderer.difficulty_rects.items():
                     if rect.collidepoint(click):
-                        depth = DIFFICULTY_DEPTH[level]
+                        # "max": no depth limit, the engine searches as deep as the time allows
+                        if level == "max":
+                            depth = None
+                        else:
+                            depth = DIFFICULTY_DEPTH[level]
                         if mode == "evs":
                             state = "stockfish_select"
                         else:
@@ -171,11 +175,14 @@ def main():
                         break
 
         elif state == "time_select":
-            renderer.draw_time_select(include_unlimited=(mode != "evs"))
+            # no "Unlimited" against Stockfish or on max difficulty: they'd think forever
+            unlimited_allowed = True
+            if mode == "evs" or depth is None:
+                unlimited_allowed = False
+            renderer.draw_time_select(include_unlimited=unlimited_allowed)
             if click:
                 for limit, rect in renderer.time_rects.items():
-                    # no "Unlimited" against Stockfish: it would think forever
-                    if mode == "evs" and limit is None:
+                    if limit is None and not unlimited_allowed:
                         continue
                     if rect.collidepoint(click):
                         time_limit = limit
@@ -191,7 +198,11 @@ def main():
                             else:
                                 stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": stockfish_elo})
                                 stockfish_label = f"{stockfish_elo}"
-                            caption = f"Your engine (depth {depth}) vs Stockfish {stockfish_label}, {time_limit}s"
+                            if depth is None:
+                                engine_label = "max"
+                            else:
+                                engine_label = f"depth {depth}"
+                            caption = f"Your engine ({engine_label}) vs Stockfish {stockfish_label}, {time_limit}s"
                             last_move_time = pygame.time.get_ticks()
 
                         game_number += 1
