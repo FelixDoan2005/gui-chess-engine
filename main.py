@@ -10,7 +10,7 @@ from ui.constants import FPS
 from ui.chess_logic import Board, pixel_to_square
 from ui.chess_logic import is_legal_move, in_check, pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves, select_piece, get_all_legal_moves, draw_reason
 from engine.ai import DIFFICULTY_DEPTH
-from engine.uci import engine_command, stockfish_path, square_name, play_uci_move
+from engine.uci import engine_command, stockfish_path, square_name, square_from_name, play_uci_move
 
 GAME_OVER_DISPLAY_MS = 5000
 MOVE_DELAY_MS = 600   # Engine vs Stockfish: a pause between moves, so you can follow the game
@@ -95,6 +95,7 @@ def main():
     move_list = []            # every move this game, e.g. ["e2e4", "e7e5"], for the engine
     game_number = 0           # goes up each game against the engine
     promotion_move = None     # a promotion waiting for its piece, e.g. "e7e8"
+    last_move = None          # (from square, to square) of the last move, drawn glowing green
     engine_thread = None
     engine_result = None
 
@@ -112,6 +113,7 @@ def main():
                     player_colour = None
                     board = Board()
                     move_list = []
+                    last_move = None
                     highlights = []
                     selected_square = None
                     promotion_square = None
@@ -208,6 +210,7 @@ def main():
                         game_number += 1
                         board = Board()
                         move_list = []
+                        last_move = None
                         highlights = []
                         selected_square = None
                         promotion_square = None
@@ -256,6 +259,7 @@ def main():
                         state = "game_over"
                     else:
                         play_uci_move(board, move)
+                        last_move = (square_from_name(move[0:2]), square_from_name(move[2:4]))
                         move_list.append(move)
                         last_move_time = pygame.time.get_ticks()
 
@@ -277,6 +281,7 @@ def main():
                     else:
                         if square in highlights:
                             uci = square_name(selected_square) + square_name(square)
+                            last_move = (selected_square, square)
                             promo_colour = make_move_and_check_promotion(board, selected_square, square)
 
                             if promo_colour is not None:
@@ -302,7 +307,7 @@ def main():
                                 selected_square = None
                                 highlights = []
 
-            renderer.draw(board.grid, highlights)
+            renderer.draw(board.grid, highlights, last_move)
             if mode == "evs":
                 renderer.draw_caption(caption)
             if engine_thread is not None:
@@ -314,7 +319,7 @@ def main():
                     renderer.draw_thinking()
 
         elif state == "promotion":
-            renderer.draw(board.grid, [])
+            renderer.draw(board.grid, [], last_move)
             renderer.draw_promotion_picker(promotion_colour)
 
             if click:
@@ -337,7 +342,7 @@ def main():
                         break
 
         elif state == "game_over":
-            renderer.draw(board.grid, [])
+            renderer.draw(board.grid, [], last_move)
             renderer.draw_game_over_popup(*game_result)
             if pygame.time.get_ticks() - game_over_time >= GAME_OVER_DISPLAY_MS:
                 state = "menu"
