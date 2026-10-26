@@ -141,7 +141,7 @@ def main():
 
         command = words[0]
         if command == "uci":
-            print("id name gui-chess-engine")
+            print("id name Felis")
             print("id author Felix Doan") # me hehe
             print("uciok", flush=True)
         elif command == "isready":

@@ -164,7 +164,7 @@ class Renderer:
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_thinking(self, label="Engine is thinking..."):
+    def draw_thinking(self, label="Felis is thinking..."):
         text = self.font_med.render(label, True, (255, 255, 0))
         self.screen.blit(text, (10, 10))
 

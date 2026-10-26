@@ -140,9 +140,9 @@ def main():
                 state = "menu"
 
         elif state == "colour_select":
-            # Engine vs Stockfish: player_colour is the colour your engine plays
+            # Engine vs Stockfish: player_colour is the colour Felis plays
             if mode == "evs":
-                renderer.draw_colour_select("Your Engine Plays", "White", "Black")
+                renderer.draw_colour_select("Felis Plays", "White", "Black")
             else:
                 renderer.draw_colour_select()
             if click:
@@ -240,7 +240,7 @@ def main():
                     engine_label = "max"
                 else:
                     engine_label = f"depth {depth}"
-                caption = f"Your engine ({engine_label}) vs Stockfish {stockfish_label}, {time_limit:g}s"
+                caption = f"Felis ({engine_label}) vs Stockfish {stockfish_label}, {time_limit:g}s"
                 last_move_time = pygame.time.get_ticks()
 
             game_number += 1
@@ -349,7 +349,7 @@ def main():
                 if mode == "evs" and board.turn != player_colour:
                     renderer.draw_thinking("Stockfish is thinking...")
                 elif mode == "evs":
-                    renderer.draw_thinking("Your engine is thinking...")
+                    renderer.draw_thinking("Felis is thinking...")
                 else:
                     renderer.draw_thinking()
 
