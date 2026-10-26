@@ -1,4 +1,4 @@
-# Chess Engine & GUI
+# Felis: Chess Engine & GUI
 
 A complete chess game with a built-in chess engine, written in Python with a Pygame GUI. The engine uses the same core techniques as real chess engines, runs as a standard **UCI engine** (on PyPy when available), and every change to it was measured with engine-vs-engine matches before being kept. **Rated about 1900 Elo against Stockfish at 10 seconds per move.**
 
