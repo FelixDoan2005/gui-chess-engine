@@ -47,10 +47,10 @@ class Renderer:
 
         # max time per engine move in seconds, None = unlimited
         self.time_rects = {}
-        time_y = 300
-        for limit in [5, 10, 15, None]:
+        time_y = 250
+        for limit in [1, 5, 10, 15, 30, None]:
             self.time_rects[limit] = pygame.Rect(BUTTON_X, time_y, BUTTON_W, BUTTON_H)
-            time_y += BUTTON_H + 20
+            time_y += BUTTON_H + 15
 
         # Stockfish's strength: an Elo cap, None = full strength
         self.stockfish_rects = {}
@@ -103,14 +103,16 @@ class Renderer:
     def draw_time_select(self, include_unlimited=True):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Per Move", True, (255, 255, 255))
-        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 180))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 140))
 
         for limit, rect in self.time_rects.items():
             if limit is None:
-                # Stockfish would think forever with no limit
+                # Stockfish (or max difficulty) would think forever with no limit
                 if not include_unlimited:
                     continue
                 label = "Unlimited"
+            elif limit == 1:
+                label = "1 second"
             else:
                 label = f"{limit} seconds"
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
