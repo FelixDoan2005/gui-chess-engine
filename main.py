@@ -95,6 +95,8 @@ def main():
     move_list = []            # every move this game, e.g. ["e2e4", "e7e5"], for the engine
     game_number = 0           # goes up each game against the engine
     promotion_move = None     # a promotion waiting for its piece, e.g. "e7e8"
+    custom_text = ""          # the custom time per move being typed, e.g. "20"
+    custom_error = ""         # shown when what was typed isn't a number
     last_move = None          # (from square, to square) of the last move, drawn glowing green
     engine_thread = None
     engine_result = None
@@ -187,38 +189,71 @@ def main():
                     if limit is None and not unlimited_allowed:
                         continue
                     if rect.collidepoint(click):
-                        time_limit = limit
-                        if engine is None:
-                            engine = chess.engine.SimpleEngine.popen_uci(engine_command())
-
-                        if mode == "evs":
-                            if stockfish is None:
-                                stockfish = chess.engine.SimpleEngine.popen_uci(stockfish_path())
-                            if stockfish_elo is None:
-                                stockfish.configure({"UCI_LimitStrength": False})
-                                stockfish_label = "full strength"
-                            else:
-                                stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": stockfish_elo})
-                                stockfish_label = f"{stockfish_elo}"
-                            if depth is None:
-                                engine_label = "max"
-                            else:
-                                engine_label = f"depth {depth}"
-                            caption = f"Your engine ({engine_label}) vs Stockfish {stockfish_label}, {time_limit}s"
-                            last_move_time = pygame.time.get_ticks()
-
-                        game_number += 1
-                        board = Board()
-                        move_list = []
-                        last_move = None
-                        highlights = []
-                        selected_square = None
-                        promotion_square = None
-                        promotion_colour = None
-                        engine_thread = None
-                        engine_result = None
-                        state = "playing"
+                        if limit == "custom":
+                            custom_text = ""
+                            custom_error = ""
+                            state = "custom_time"
+                        else:
+                            time_limit = limit
+                            state = "start_game"
                         break
+
+        elif state == "custom_time":
+            # type the seconds: Enter starts the game, Esc goes back
+            renderer.draw_custom_time(custom_text, custom_error)
+            for event in events:
+                if event.type != pygame.KEYDOWN:
+                    continue
+                if event.key == pygame.K_ESCAPE:
+                    state = "time_select"
+                elif event.key == pygame.K_BACKSPACE:
+                    custom_text = custom_text[:-1]
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                    try:
+                        seconds = float(custom_text)
+                    except ValueError:
+                        seconds = 0
+                    if seconds > 0:
+                        time_limit = seconds
+                        state = "start_game"
+                    else:
+                        custom_error = "Type a number of seconds, e.g. 20"
+                elif event.unicode in "0123456789." and event.unicode != "" and len(custom_text) < 6:
+                    custom_text += event.unicode
+                    custom_error = ""
+
+        elif state == "start_game":
+            # start the engine programs if needed, and a fresh board
+            if engine is None:
+                engine = chess.engine.SimpleEngine.popen_uci(engine_command())
+
+            if mode == "evs":
+                if stockfish is None:
+                    stockfish = chess.engine.SimpleEngine.popen_uci(stockfish_path())
+                if stockfish_elo is None:
+                    stockfish.configure({"UCI_LimitStrength": False})
+                    stockfish_label = "full strength"
+                else:
+                    stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": stockfish_elo})
+                    stockfish_label = f"{stockfish_elo}"
+                if depth is None:
+                    engine_label = "max"
+                else:
+                    engine_label = f"depth {depth}"
+                caption = f"Your engine ({engine_label}) vs Stockfish {stockfish_label}, {time_limit:g}s"
+                last_move_time = pygame.time.get_ticks()
+
+            game_number += 1
+            board = Board()
+            move_list = []
+            last_move = None
+            highlights = []
+            selected_square = None
+            promotion_square = None
+            promotion_colour = None
+            engine_thread = None
+            engine_result = None
+            state = "playing"
 
         elif state == "playing":
             # an engine moves: always in Engine vs Stockfish, otherwise on its colour

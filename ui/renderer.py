@@ -18,6 +18,7 @@ class Renderer:
         }
         self.font_large = pygame.font.SysFont("Arial", 64, bold=True)
         self.font_med = pygame.font.SysFont("Arial", 32)
+        self.font_small = pygame.font.SysFont("Arial", 22)
 
         self.pvp_rect = pygame.Rect(BUTTON_X, 340, BUTTON_W, BUTTON_H)
         self.pve_rect = pygame.Rect(BUTTON_X, 430, BUTTON_W, BUTTON_H)
@@ -46,11 +47,13 @@ class Renderer:
             self.difficulty_rects[levels[i]] = pygame.Rect(diff_x + i * (DIFF_BTN + DIFF_GAP), diff_y, DIFF_BTN, DIFF_BTN)
 
         # max time per engine move in seconds, None = unlimited
+        # "custom" opens a screen to type your own number of seconds
         self.time_rects = {}
-        time_y = 250
-        for limit in [1, 5, 10, 15, 30, None]:
+        time_y = 215
+        for limit in [1, 5, 10, 15, 30, "custom", None]:
             self.time_rects[limit] = pygame.Rect(BUTTON_X, time_y, BUTTON_W, BUTTON_H)
-            time_y += BUTTON_H + 15
+            time_y += BUTTON_H + 10
+        self.custom_box = pygame.Rect(BUTTON_X, 330, BUTTON_W, BUTTON_H)
 
         # Stockfish's strength: an Elo cap, None = full strength
         self.stockfish_rects = {}
@@ -103,7 +106,7 @@ class Renderer:
     def draw_time_select(self, include_unlimited=True):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Per Move", True, (255, 255, 255))
-        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 140))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 110))
 
         for limit, rect in self.time_rects.items():
             if limit is None:
@@ -111,6 +114,8 @@ class Renderer:
                 if not include_unlimited:
                     continue
                 label = "Unlimited"
+            elif limit == "custom":
+                label = "Custom..."
             elif limit == 1:
                 label = "1 second"
             else:
@@ -118,6 +123,32 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_custom_time(self, typed, error):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Custom Time", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        # the box with what's been typed so far
+        box = self.custom_box
+        pygame.draw.rect(self.screen, (255, 255, 255), box, width=2, border_radius=8)
+        if typed == "":
+            text = self.font_med.render("type seconds", True, (120, 120, 120))
+        else:
+            text = self.font_med.render(typed + " seconds", True, (255, 255, 255))
+        self.screen.blit(text, (box.centerx - text.get_width() // 2, box.centery - text.get_height() // 2))
+
+        lines = [
+            ("Press Enter to start, Esc to go back", (200, 200, 200)),
+            ("Times over 30 seconds mean long waits per move", (255, 200, 0)),
+        ]
+        if error != "":
+            lines.append((error, (255, 90, 90)))
+        line_y = box.bottom + 25
+        for line, colour in lines:
+            text = self.font_small.render(line, True, colour)
+            self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, line_y))
+            line_y += 35
 
     def draw_stockfish_select(self):
         self.screen.fill((30, 30, 30))
