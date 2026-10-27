@@ -49,6 +49,8 @@ Every engine change was checked with engine-vs-engine matches: both versions pla
 | Removing 5 of the 13 heuristics | per-heuristic test + 1,000-game simplification test | same strength, **16% faster** |
 | Running on PyPy | timing on 36 searches | up to 3.2× faster, identical moves |
 | Keeping the transposition table between moves | timing + 100 games | 1.3× faster, no loss in strength |
+| Texel tuning of 25 numbers (187k positions from 20,000 self-play games) | 400 games at 1 second per move | **−51 Elo** [−84, −19], so not used |
+
 
 **Rating against Stockfish 19**, capped at 1500, 1750, 2000 and 2250 Elo:
 
