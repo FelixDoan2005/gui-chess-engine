@@ -1,0 +1,10 @@
+Engine vs Stockfish capped to set Elo levels, 1s per move each, 400 games in 26 min
+
+  Stockfish Elo   W /  D /  L    score
+           1400    80 / 11 /  9    85.5%
+           1600    28 / 20 / 52    38.0%
+           1800    17 / 20 / 63    27.0%
+           2000    12 / 19 / 69    21.5%
+
+  Rating: about 1632   95% range [1595, 1668]
+  Referee: 0 games with an illegal move or mismatched boards

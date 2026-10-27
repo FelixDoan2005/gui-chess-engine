@@ -1,0 +1,4 @@
+Tuned vs current engine, 1s per move each, 400 games in 30 min
+  tuned: 147 W / 48 D / 205 L, score 42.8%
+  Elo the tuning adds: -51   95% range [-84, -19]
+  the tuned numbers are weaker

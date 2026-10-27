@@ -1,0 +1,556 @@
+
+===== 1. self-play, 20,000 games (18:24) =====
+Self-play: 20,000 games to play (0 already saved), 0.1s per move
+  50/20,000 games | 0m 23s so far | about 2h 33m left
+  100/20,000 games | 0m 41s so far | about 2h 17m left
+  150/20,000 games | 1m 01s so far | about 2h 15m left
+  200/20,000 games | 1m 18s so far | about 2h 09m left
+  250/20,000 games | 1m 37s so far | about 2h 08m left
+  300/20,000 games | 1m 57s so far | about 2h 08m left
+  350/20,000 games | 2m 15s so far | about 2h 06m left
+  400/20,000 games | 2m 37s so far | about 2h 08m left
+  450/20,000 games | 2m 56s so far | about 2h 07m left
+  500/20,000 games | 3m 17s so far | about 2h 08m left
+  550/20,000 games | 3m 37s so far | about 2h 07m left
+  600/20,000 games | 3m 52s so far | about 2h 05m left
+  650/20,000 games | 4m 14s so far | about 2h 06m left
+  700/20,000 games | 4m 35s so far | about 2h 06m left
+  750/20,000 games | 4m 54s so far | about 2h 06m left
+  800/20,000 games | 5m 11s so far | about 2h 04m left
+  850/20,000 games | 5m 30s so far | about 2h 04m left
+  900/20,000 games | 5m 50s so far | about 2h 04m left
+  950/20,000 games | 6m 09s so far | about 2h 03m left
+  1,000/20,000 games | 6m 26s so far | about 2h 02m left
+  1,050/20,000 games | 6m 47s so far | about 2h 02m left
+  1,100/20,000 games | 7m 04s so far | about 2h 01m left
+  1,150/20,000 games | 7m 25s so far | about 2h 01m left
+  1,200/20,000 games | 7m 45s so far | about 2h 01m left
+  1,250/20,000 games | 8m 03s so far | about 2h 00m left
+  1,300/20,000 games | 8m 22s so far | about 2h 00m left
+  1,350/20,000 games | 8m 39s so far | about 1h 59m left
+  1,400/20,000 games | 8m 58s so far | about 1h 59m left
+  1,450/20,000 games | 9m 16s so far | about 1h 58m left
+  1,500/20,000 games | 9m 33s so far | about 1h 57m left
+  1,550/20,000 games | 9m 51s so far | about 1h 57m left
+  1,600/20,000 games | 10m 08s so far | about 1h 56m left
+  1,650/20,000 games | 10m 26s so far | about 1h 56m left
+  1,700/20,000 games | 10m 43s so far | about 1h 55m left
+  1,750/20,000 games | 11m 01s so far | about 1h 54m left
+  1,800/20,000 games | 11m 24s so far | about 1h 55m left
+  1,850/20,000 games | 11m 44s so far | about 1h 55m left
+  1,900/20,000 games | 12m 04s so far | about 1h 54m left
+  1,950/20,000 games | 12m 25s so far | about 1h 54m left
+  2,000/20,000 games | 12m 44s so far | about 1h 54m left
+  2,050/20,000 games | 13m 02s so far | about 1h 54m left
+  2,100/20,000 games | 13m 19s so far | about 1h 53m left
+  2,150/20,000 games | 13m 42s so far | about 1h 53m left
+  2,200/20,000 games | 14m 09s so far | about 1h 54m left
+  2,250/20,000 games | 14m 30s so far | about 1h 54m left
+  2,300/20,000 games | 14m 53s so far | about 1h 54m left
+  2,350/20,000 games | 15m 11s so far | about 1h 54m left
+  2,400/20,000 games | 15m 29s so far | about 1h 53m left
+  2,450/20,000 games | 15m 48s so far | about 1h 53m left
+  2,500/20,000 games | 16m 04s so far | about 1h 52m left
+  2,550/20,000 games | 16m 21s so far | about 1h 51m left
+  2,600/20,000 games | 16m 38s so far | about 1h 51m left
+  2,650/20,000 games | 16m 58s so far | about 1h 51m left
+  2,700/20,000 games | 17m 21s so far | about 1h 51m left
+  2,750/20,000 games | 17m 45s so far | about 1h 51m left
+  2,800/20,000 games | 18m 13s so far | about 1h 51m left
+  2,850/20,000 games | 18m 32s so far | about 1h 51m left
+  2,900/20,000 games | 18m 52s so far | about 1h 51m left
+  2,950/20,000 games | 19m 09s so far | about 1h 50m left
+  3,000/20,000 games | 19m 27s so far | about 1h 50m left
+  3,050/20,000 games | 19m 46s so far | about 1h 49m left
+  3,100/20,000 games | 20m 04s so far | about 1h 49m left
+  3,150/20,000 games | 20m 26s so far | about 1h 49m left
+  3,200/20,000 games | 20m 42s so far | about 1h 48m left
+  3,250/20,000 games | 21m 02s so far | about 1h 48m left
+  3,300/20,000 games | 21m 22s so far | about 1h 48m left
+  3,350/20,000 games | 21m 42s so far | about 1h 47m left
+  3,400/20,000 games | 22m 05s so far | about 1h 47m left
+  3,450/20,000 games | 22m 22s so far | about 1h 47m left
+  3,500/20,000 games | 22m 39s so far | about 1h 46m left
+  3,550/20,000 games | 22m 58s so far | about 1h 46m left
+  3,600/20,000 games | 23m 14s so far | about 1h 45m left
+  3,650/20,000 games | 23m 31s so far | about 1h 45m left
+  3,700/20,000 games | 23m 50s so far | about 1h 45m left
+  3,750/20,000 games | 24m 12s so far | about 1h 44m left
+  3,800/20,000 games | 24m 31s so far | about 1h 44m left
+  3,850/20,000 games | 24m 48s so far | about 1h 44m left
+  3,900/20,000 games | 25m 05s so far | about 1h 43m left
+  3,950/20,000 games | 25m 23s so far | about 1h 43m left
+  4,000/20,000 games | 25m 42s so far | about 1h 42m left
+  4,050/20,000 games | 26m 01s so far | about 1h 42m left
+  4,100/20,000 games | 26m 16s so far | about 1h 41m left
+  4,150/20,000 games | 26m 34s so far | about 1h 41m left
+  4,200/20,000 games | 26m 54s so far | about 1h 41m left
+  4,250/20,000 games | 27m 13s so far | about 1h 40m left
+  4,300/20,000 games | 27m 33s so far | about 1h 40m left
+  4,350/20,000 games | 27m 49s so far | about 1h 40m left
+  4,400/20,000 games | 28m 07s so far | about 1h 39m left
+  4,450/20,000 games | 28m 24s so far | about 1h 39m left
+  4,500/20,000 games | 28m 45s so far | about 1h 39m left
+  4,550/20,000 games | 29m 05s so far | about 1h 38m left
+  4,600/20,000 games | 29m 26s so far | about 1h 38m left
+  4,650/20,000 games | 29m 44s so far | about 1h 38m left
+  4,700/20,000 games | 30m 05s so far | about 1h 37m left
+  4,750/20,000 games | 30m 22s so far | about 1h 37m left
+  4,800/20,000 games | 30m 39s so far | about 1h 37m left
+  4,850/20,000 games | 30m 58s so far | about 1h 36m left
+  4,900/20,000 games | 31m 16s so far | about 1h 36m left
+  4,950/20,000 games | 31m 35s so far | about 1h 36m left
+  5,000/20,000 games | 31m 56s so far | about 1h 35m left
+  5,050/20,000 games | 32m 12s so far | about 1h 35m left
+  5,100/20,000 games | 32m 33s so far | about 1h 35m left
+  5,150/20,000 games | 32m 51s so far | about 1h 34m left
+  5,200/20,000 games | 33m 11s so far | about 1h 34m left
+  5,250/20,000 games | 33m 27s so far | about 1h 34m left
+  5,300/20,000 games | 33m 51s so far | about 1h 33m left
+  5,350/20,000 games | 34m 11s so far | about 1h 33m left
+  5,400/20,000 games | 34m 36s so far | about 1h 33m left
+  5,450/20,000 games | 34m 58s so far | about 1h 33m left
+  5,500/20,000 games | 35m 24s so far | about 1h 33m left
+  5,550/20,000 games | 35m 54s so far | about 1h 33m left
+  5,600/20,000 games | 36m 20s so far | about 1h 33m left
+  5,650/20,000 games | 36m 45s so far | about 1h 33m left
+  5,700/20,000 games | 37m 10s so far | about 1h 33m left
+  5,750/20,000 games | 37m 33s so far | about 1h 33m left
+  5,800/20,000 games | 38m 02s so far | about 1h 33m left
+  5,850/20,000 games | 38m 25s so far | about 1h 32m left
+
+===== 1. self-play, 20,000 games (19:05) =====
+Self-play: 14,130 games to play (5,870 already saved), 0.1s per move
+  50/14,130 games | 0m 25s so far | about 2h 01m left
+  100/14,130 games | 0m 48s so far | about 1h 52m left
+  150/14,130 games | 1m 04s so far | about 1h 40m left
+  200/14,130 games | 1m 23s so far | about 1h 37m left
+  250/14,130 games | 1m 46s so far | about 1h 38m left
+  300/14,130 games | 2m 06s so far | about 1h 36m left
+  350/14,130 games | 2m 26s so far | about 1h 35m left
+  400/14,130 games | 2m 48s so far | about 1h 36m left
+  450/14,130 games | 3m 07s so far | about 1h 34m left
+  500/14,130 games | 3m 26s so far | about 1h 34m left
+  550/14,130 games | 3m 49s so far | about 1h 34m left
+  600/14,130 games | 4m 09s so far | about 1h 33m left
+  650/14,130 games | 4m 29s so far | about 1h 33m left
+  700/14,130 games | 4m 49s so far | about 1h 32m left
+  750/14,130 games | 5m 12s so far | about 1h 32m left
+  800/14,130 games | 5m 31s so far | about 1h 32m left
+  850/14,130 games | 5m 52s so far | about 1h 31m left
+  900/14,130 games | 6m 11s so far | about 1h 31m left
+  950/14,130 games | 6m 31s so far | about 1h 30m left
+  1,000/14,130 games | 6m 49s so far | about 1h 29m left
+  1,050/14,130 games | 7m 11s so far | about 1h 29m left
+  1,100/14,130 games | 7m 33s so far | about 1h 29m left
+  1,150/14,130 games | 7m 54s so far | about 1h 29m left
+  1,200/14,130 games | 8m 12s so far | about 1h 28m left
+  1,250/14,130 games | 8m 33s so far | about 1h 28m left
+  1,300/14,130 games | 8m 51s so far | about 1h 27m left
+  1,350/14,130 games | 9m 09s so far | about 1h 26m left
+  1,400/14,130 games | 9m 32s so far | about 1h 26m left
+  1,450/14,130 games | 9m 54s so far | about 1h 26m left
+  1,500/14,130 games | 10m 19s so far | about 1h 26m left
+  1,550/14,130 games | 10m 38s so far | about 1h 26m left
+  1,600/14,130 games | 10m 59s so far | about 1h 26m left
+  1,650/14,130 games | 11m 18s so far | about 1h 25m left
+  1,700/14,130 games | 11m 38s so far | about 1h 25m left
+  1,750/14,130 games | 11m 58s so far | about 1h 24m left
+  1,800/14,130 games | 12m 21s so far | about 1h 24m left
+  1,850/14,130 games | 12m 41s so far | about 1h 24m left
+  1,900/14,130 games | 13m 11s so far | about 1h 24m left
+  1,950/14,130 games | 13m 36s so far | about 1h 24m left
+  2,000/14,130 games | 14m 05s so far | about 1h 25m left
+  2,050/14,130 games | 14m 36s so far | about 1h 26m left
+  2,100/14,130 games | 15m 04s so far | about 1h 26m left
+  2,150/14,130 games | 15m 31s so far | about 1h 26m left
+  2,200/14,130 games | 15m 56s so far | about 1h 26m left
+  2,250/14,130 games | 16m 22s so far | about 1h 26m left
+  2,300/14,130 games | 16m 46s so far | about 1h 26m left
+  2,350/14,130 games | 17m 10s so far | about 1h 26m left
+  2,400/14,130 games | 17m 37s so far | about 1h 26m left
+  2,450/14,130 games | 18m 02s so far | about 1h 26m left
+  2,500/14,130 games | 18m 27s so far | about 1h 25m left
+  2,550/14,130 games | 18m 54s so far | about 1h 25m left
+  2,600/14,130 games | 19m 21s so far | about 1h 25m left
+  2,650/14,130 games | 19m 50s so far | about 1h 25m left
+  2,700/14,130 games | 20m 15s so far | about 1h 25m left
+  2,750/14,130 games | 20m 39s so far | about 1h 25m left
+  2,800/14,130 games | 21m 07s so far | about 1h 25m left
+  2,850/14,130 games | 21m 31s so far | about 1h 25m left
+  2,900/14,130 games | 21m 59s so far | about 1h 25m left
+  2,950/14,130 games | 22m 30s so far | about 1h 25m left
+  3,000/14,130 games | 22m 57s so far | about 1h 25m left
+  3,050/14,130 games | 23m 26s so far | about 1h 25m left
+  3,100/14,130 games | 23m 51s so far | about 1h 24m left
+  3,150/14,130 games | 24m 15s so far | about 1h 24m left
+  3,200/14,130 games | 24m 40s so far | about 1h 24m left
+  3,250/14,130 games | 25m 10s so far | about 1h 24m left
+  3,300/14,130 games | 25m 36s so far | about 1h 24m left
+  3,350/14,130 games | 26m 02s so far | about 1h 23m left
+  3,400/14,130 games | 26m 25s so far | about 1h 23m left
+  3,450/14,130 games | 26m 54s so far | about 1h 23m left
+  3,500/14,130 games | 27m 19s so far | about 1h 22m left
+  3,550/14,130 games | 27m 46s so far | about 1h 22m left
+  3,600/14,130 games | 28m 10s so far | about 1h 22m left
+  3,650/14,130 games | 28m 36s so far | about 1h 22m left
+  3,700/14,130 games | 29m 02s so far | about 1h 21m left
+  3,750/14,130 games | 29m 27s so far | about 1h 21m left
+  3,800/14,130 games | 29m 54s so far | about 1h 21m left
+  3,850/14,130 games | 30m 20s so far | about 1h 21m left
+  3,900/14,130 games | 30m 44s so far | about 1h 20m left
+  3,950/14,130 games | 31m 08s so far | about 1h 20m left
+  4,000/14,130 games | 31m 31s so far | about 1h 19m left
+  4,050/14,130 games | 31m 55s so far | about 1h 19m left
+  4,100/14,130 games | 32m 22s so far | about 1h 19m left
+  4,150/14,130 games | 32m 45s so far | about 1h 18m left
+  4,200/14,130 games | 33m 06s so far | about 1h 18m left
+  4,250/14,130 games | 33m 31s so far | about 1h 17m left
+  4,300/14,130 games | 33m 51s so far | about 1h 17m left
+  4,350/14,130 games | 34m 16s so far | about 1h 17m left
+  4,400/14,130 games | 34m 38s so far | about 1h 16m left
+  4,450/14,130 games | 35m 04s so far | about 1h 16m left
+  4,500/14,130 games | 35m 30s so far | about 1h 15m left
+  4,550/14,130 games | 35m 54s so far | about 1h 15m left
+  4,600/14,130 games | 36m 19s so far | about 1h 15m left
+  4,650/14,130 games | 36m 42s so far | about 1h 14m left
+  4,700/14,130 games | 37m 05s so far | about 1h 14m left
+  4,750/14,130 games | 37m 28s so far | about 1h 13m left
+  4,800/14,130 games | 37m 51s so far | about 1h 13m left
+  4,850/14,130 games | 38m 11s so far | about 1h 13m left
+  4,900/14,130 games | 38m 28s so far | about 1h 12m left
+  4,950/14,130 games | 38m 47s so far | about 1h 11m left
+  5,000/14,130 games | 39m 07s so far | about 1h 11m left
+  5,050/14,130 games | 39m 26s so far | about 1h 10m left
+  5,100/14,130 games | 39m 43s so far | about 1h 10m left
+  5,150/14,130 games | 40m 05s so far | about 1h 09m left
+  5,200/14,130 games | 40m 23s so far | about 1h 09m left
+  5,250/14,130 games | 40m 39s so far | about 1h 08m left
+  5,300/14,130 games | 40m 59s so far | about 1h 08m left
+  5,350/14,130 games | 41m 19s so far | about 1h 07m left
+  5,400/14,130 games | 41m 42s so far | about 1h 07m left
+  5,450/14,130 games | 42m 02s so far | about 1h 06m left
+  5,500/14,130 games | 42m 20s so far | about 1h 06m left
+  5,550/14,130 games | 42m 42s so far | about 1h 06m left
+  5,600/14,130 games | 42m 57s so far | about 1h 05m left
+  5,650/14,130 games | 43m 19s so far | about 1h 05m left
+  5,700/14,130 games | 43m 38s so far | about 1h 04m left
+  5,750/14,130 games | 43m 57s so far | about 1h 04m left
+  5,800/14,130 games | 44m 17s so far | about 1h 03m left
+  5,850/14,130 games | 44m 35s so far | about 1h 03m left
+  5,900/14,130 games | 44m 53s so far | about 1h 02m left
+  5,950/14,130 games | 45m 11s so far | about 1h 02m left
+  6,000/14,130 games | 45m 28s so far | about 1h 01m left
+  6,050/14,130 games | 45m 46s so far | about 1h 01m left
+  6,100/14,130 games | 46m 09s so far | about 1h 00m left
+  6,150/14,130 games | 46m 31s so far | about 1h 00m left
+  6,200/14,130 games | 46m 52s so far | about 59m 57s left
+  6,250/14,130 games | 47m 11s so far | about 59m 30s left
+  6,300/14,130 games | 47m 33s so far | about 59m 07s left
+  6,350/14,130 games | 47m 55s so far | about 58m 43s left
+  6,400/14,130 games | 48m 21s so far | about 58m 24s left
+  6,450/14,130 games | 48m 48s so far | about 58m 07s left
+  6,500/14,130 games | 49m 09s so far | about 57m 42s left
+  6,550/14,130 games | 49m 30s so far | about 57m 18s left
+  6,600/14,130 games | 49m 54s so far | about 56m 56s left
+  6,650/14,130 games | 50m 15s so far | about 56m 31s left
+  6,700/14,130 games | 50m 39s so far | about 56m 10s left
+  6,750/14,130 games | 51m 05s so far | about 55m 51s left
+  6,800/14,130 games | 51m 26s so far | about 55m 26s left
+  6,850/14,130 games | 51m 49s so far | about 55m 04s left
+  6,900/14,130 games | 52m 16s so far | about 54m 46s left
+  6,950/14,130 games | 52m 36s so far | about 54m 21s left
+  7,000/14,130 games | 53m 06s so far | about 54m 05s left
+  7,050/14,130 games | 53m 31s so far | about 53m 45s left
+  7,100/14,130 games | 53m 58s so far | about 53m 26s left
+  7,150/14,130 games | 54m 25s so far | about 53m 08s left
+  7,200/14,130 games | 54m 47s so far | about 52m 44s left
+  7,250/14,130 games | 55m 10s so far | about 52m 21s left
+  7,300/14,130 games | 55m 43s so far | about 52m 07s left
+  7,350/14,130 games | 56m 09s so far | about 51m 47s left
+  7,400/14,130 games | 56m 39s so far | about 51m 31s left
+  7,450/14,130 games | 57m 03s so far | about 51m 09s left
+  7,500/14,130 games | 57m 31s so far | about 50m 50s left
+  7,550/14,130 games | 58m 07s so far | about 50m 39s left
+  7,600/14,130 games | 58m 34s so far | about 50m 20s left
+  7,650/14,130 games | 59m 01s so far | about 49m 59s left
+  7,700/14,130 games | 59m 34s so far | about 49m 44s left
+  7,750/14,130 games | 1h 00m so far | about 49m 24s left
+  7,800/14,130 games | 1h 00m so far | about 49m 06s left
+  7,850/14,130 games | 1h 01m so far | about 48m 59s left
+  7,900/14,130 games | 1h 01m so far | about 48m 40s left
+  7,950/14,130 games | 1h 02m so far | about 48m 21s left
+  8,000/14,130 games | 1h 02m so far | about 48m 10s left
+  8,050/14,130 games | 1h 03m so far | about 47m 52s left
+  8,100/14,130 games | 1h 03m so far | about 47m 33s left
+  8,150/14,130 games | 1h 04m so far | about 47m 13s left
+  8,200/14,130 games | 1h 04m so far | about 46m 56s left
+  8,250/14,130 games | 1h 05m so far | about 46m 34s left
+  8,300/14,130 games | 1h 05m so far | about 46m 15s left
+  8,350/14,130 games | 1h 06m so far | about 45m 56s left
+  8,400/14,130 games | 1h 06m so far | about 45m 40s left
+  8,450/14,130 games | 1h 07m so far | about 45m 17s left
+  8,500/14,130 games | 1h 07m so far | about 44m 56s left
+  8,550/14,130 games | 1h 08m so far | about 44m 40s left
+  8,600/14,130 games | 1h 08m so far | about 44m 13s left
+  8,650/14,130 games | 1h 09m so far | about 43m 57s left
+  8,700/14,130 games | 1h 09m so far | about 43m 33s left
+  8,750/14,130 games | 1h 10m so far | about 43m 07s left
+  8,800/14,130 games | 1h 10m so far | about 42m 46s left
+  8,850/14,130 games | 1h 11m so far | about 42m 23s left
+  8,900/14,130 games | 1h 11m so far | about 42m 02s left
+  8,950/14,130 games | 1h 11m so far | about 41m 39s left
+  9,000/14,130 games | 1h 12m so far | about 41m 16s left
+  9,050/14,130 games | 1h 12m so far | about 40m 53s left
+  9,100/14,130 games | 1h 13m so far | about 40m 33s left
+  9,150/14,130 games | 1h 13m so far | about 40m 07s left
+  9,200/14,130 games | 1h 14m so far | about 39m 43s left
+  9,250/14,130 games | 1h 14m so far | about 39m 24s left
+  9,300/14,130 games | 1h 15m so far | about 39m 01s left
+  9,350/14,130 games | 1h 15m so far | about 38m 34s left
+  9,400/14,130 games | 1h 15m so far | about 38m 13s left
+  9,450/14,130 games | 1h 16m so far | about 37m 52s left
+  9,500/14,130 games | 1h 16m so far | about 37m 26s left
+  9,550/14,130 games | 1h 17m so far | about 37m 03s left
+  9,600/14,130 games | 1h 17m so far | about 36m 44s left
+  9,650/14,130 games | 1h 18m so far | about 36m 22s left
+  9,700/14,130 games | 1h 18m so far | about 35m 56s left
+  9,750/14,130 games | 1h 19m so far | about 35m 33s left
+  9,800/14,130 games | 1h 19m so far | about 35m 10s left
+  9,850/14,130 games | 1h 20m so far | about 34m 49s left
+  9,900/14,130 games | 1h 20m so far | about 34m 28s left
+  9,950/14,130 games | 1h 21m so far | about 34m 04s left
+  10,000/14,130 games | 1h 21m so far | about 33m 39s left
+  10,050/14,130 games | 1h 21m so far | about 33m 16s left
+  10,100/14,130 games | 1h 22m so far | about 32m 50s left
+  10,150/14,130 games | 1h 22m so far | about 32m 30s left
+  10,200/14,130 games | 1h 23m so far | about 32m 05s left
+  10,250/14,130 games | 1h 23m so far | about 31m 40s left
+  10,300/14,130 games | 1h 24m so far | about 31m 14s left
+  10,350/14,130 games | 1h 24m so far | about 30m 51s left
+  10,400/14,130 games | 1h 24m so far | about 30m 29s left
+  10,450/14,130 games | 1h 25m so far | about 30m 04s left
+  10,500/14,130 games | 1h 25m so far | about 29m 40s left
+  10,550/14,130 games | 1h 26m so far | about 29m 17s left
+  10,600/14,130 games | 1h 26m so far | about 28m 53s left
+  10,650/14,130 games | 1h 27m so far | about 28m 28s left
+  10,700/14,130 games | 1h 27m so far | about 28m 03s left
+  10,750/14,130 games | 1h 27m so far | about 27m 39s left
+  10,800/14,130 games | 1h 28m so far | about 27m 15s left
+  10,850/14,130 games | 1h 28m so far | about 26m 49s left
+  10,900/14,130 games | 1h 29m so far | about 26m 26s left
+  10,950/14,130 games | 1h 29m so far | about 26m 01s left
+  11,000/14,130 games | 1h 30m so far | about 25m 37s left
+  11,050/14,130 games | 1h 30m so far | about 25m 12s left
+  11,100/14,130 games | 1h 30m so far | about 24m 48s left
+  11,150/14,130 games | 1h 31m so far | about 24m 24s left
+  11,200/14,130 games | 1h 31m so far | about 24m 00s left
+  11,250/14,130 games | 1h 32m so far | about 23m 34s left
+  11,300/14,130 games | 1h 32m so far | about 23m 11s left
+  11,350/14,130 games | 1h 32m so far | about 22m 46s left
+  11,400/14,130 games | 1h 33m so far | about 22m 22s left
+  11,450/14,130 games | 1h 33m so far | about 21m 58s left
+  11,500/14,130 games | 1h 34m so far | about 21m 33s left
+  11,550/14,130 games | 1h 34m so far | about 21m 10s left
+  11,600/14,130 games | 1h 35m so far | about 20m 45s left
+  11,650/14,130 games | 1h 35m so far | about 20m 21s left
+  11,700/14,130 games | 1h 36m so far | about 19m 58s left
+  11,750/14,130 games | 1h 36m so far | about 19m 33s left
+  11,800/14,130 games | 1h 36m so far | about 19m 08s left
+  11,850/14,130 games | 1h 37m so far | about 18m 44s left
+  11,900/14,130 games | 1h 37m so far | about 18m 19s left
+  11,950/14,130 games | 1h 38m so far | about 17m 54s left
+  12,000/14,130 games | 1h 38m so far | about 17m 30s left
+  12,050/14,130 games | 1h 39m so far | about 17m 06s left
+  12,100/14,130 games | 1h 39m so far | about 16m 41s left
+  12,150/14,130 games | 1h 39m so far | about 16m 16s left
+  12,200/14,130 games | 1h 40m so far | about 15m 51s left
+  12,250/14,130 games | 1h 40m so far | about 15m 28s left
+  12,300/14,130 games | 1h 41m so far | about 15m 04s left
+  12,350/14,130 games | 1h 41m so far | about 14m 40s left
+  12,400/14,130 games | 1h 42m so far | about 14m 16s left
+  12,450/14,130 games | 1h 42m so far | about 13m 51s left
+  12,500/14,130 games | 1h 43m so far | about 13m 26s left
+  12,550/14,130 games | 1h 43m so far | about 13m 01s left
+  12,600/14,130 games | 1h 44m so far | about 12m 38s left
+  12,650/14,130 games | 1h 44m so far | about 12m 13s left
+  12,700/14,130 games | 1h 44m so far | about 11m 49s left
+  12,750/14,130 games | 1h 45m so far | about 11m 23s left
+  12,800/14,130 games | 1h 45m so far | about 10m 59s left
+  12,850/14,130 games | 1h 46m so far | about 10m 34s left
+  12,900/14,130 games | 1h 46m so far | about 10m 10s left
+  12,950/14,130 games | 1h 47m so far | about 9m 45s left
+  13,000/14,130 games | 1h 47m so far | about 9m 20s left
+  13,050/14,130 games | 1h 47m so far | about 8m 55s left
+  13,100/14,130 games | 1h 48m so far | about 8m 31s left
+  13,150/14,130 games | 1h 48m so far | about 8m 06s left
+  13,200/14,130 games | 1h 49m so far | about 7m 41s left
+  13,250/14,130 games | 1h 49m so far | about 7m 16s left
+  13,300/14,130 games | 1h 50m so far | about 6m 52s left
+  13,350/14,130 games | 1h 50m so far | about 6m 27s left
+  13,400/14,130 games | 1h 50m so far | about 6m 02s left
+  13,450/14,130 games | 1h 51m so far | about 5m 37s left
+  13,500/14,130 games | 1h 51m so far | about 5m 13s left
+  13,550/14,130 games | 1h 52m so far | about 4m 48s left
+  13,600/14,130 games | 1h 52m so far | about 4m 24s left
+  13,650/14,130 games | 1h 53m so far | about 3m 59s left
+  13,700/14,130 games | 1h 53m so far | about 3m 34s left
+  13,750/14,130 games | 1h 54m so far | about 3m 09s left
+  13,800/14,130 games | 1h 54m so far | about 2m 44s left
+  13,850/14,130 games | 1h 55m so far | about 2m 19s left
+  13,900/14,130 games | 1h 55m so far | about 1m 54s left
+  13,950/14,130 games | 1h 56m so far | about 1m 29s left
+  14,000/14,130 games | 1h 56m so far | about 1m 04s left
+  14,050/14,130 games | 1h 56m so far | about 0m 39s left
+  14,100/14,130 games | 1h 57m so far | about 0m 14s left
+  14,130/14,130 games | 1h 57m so far | about 0m 00s left
+===== exit code 0 after 1h 57m =====
+
+===== 2. tuning (21:03) =====
+Tuning on 187,319 positions
+  features worked out in 24s
+  K = 0.791, error before: training 0.125472, held back 0.126468
+  round 1, pass 1: error 0.125167, held back 0.126132 (26s)
+  round 1, pass 2: error 0.124949, held back 0.125849 (26s)
+  round 1, pass 3: error 0.124811, held back 0.125668 (27s)
+  round 1, pass 4: error 0.124713, held back 0.125572 (27s)
+  round 1, pass 5: error 0.124625, held back 0.125485 (28s)
+  round 1, pass 6: error 0.124545, held back 0.125407 (28s)
+  round 1, pass 7: error 0.124473, held back 0.125337 (29s)
+  round 1, pass 8: error 0.124409, held back 0.125275 (30s)
+  round 1, pass 9: error 0.124350, held back 0.125221 (30s)
+  round 1, pass 10: error 0.124296, held back 0.125167 (31s)
+  round 1, pass 11: error 0.124247, held back 0.125121 (31s)
+  round 1, pass 12: error 0.124202, held back 0.125073 (32s)
+  round 1, pass 13: error 0.124160, held back 0.125028 (33s)
+  round 1, pass 14: error 0.124122, held back 0.124990 (33s)
+  round 1, pass 15: error 0.124087, held back 0.124955 (34s)
+  round 1, pass 16: error 0.124054, held back 0.124920 (34s)
+  round 1, pass 17: error 0.124025, held back 0.124894 (35s)
+  round 1, pass 18: error 0.123999, held back 0.124869 (36s)
+  round 1, pass 19: error 0.123975, held back 0.124845 (36s)
+  round 1, pass 20: error 0.123962, held back 0.124833 (37s)
+  round 1, pass 21: error 0.123950, held back 0.124819 (37s)
+  round 1, pass 22: error 0.123939, held back 0.124803 (38s)
+  round 1, pass 23: error 0.123930, held back 0.124790 (39s)
+  round 1, pass 24: error 0.123921, held back 0.124774 (39s)
+  round 1, pass 25: error 0.123913, held back 0.124767 (40s)
+  round 1, pass 26: error 0.123893, held back 0.124738 (40s)
+  round 1, pass 27: error 0.123880, held back 0.124711 (41s)
+  round 1, pass 28: error 0.123868, held back 0.124690 (42s)
+  round 1, pass 29: error 0.123858, held back 0.124667 (42s)
+  round 1, pass 30: error 0.123849, held back 0.124634 (43s)
+  round 1, pass 31: error 0.123841, held back 0.124616 (43s)
+  round 1, pass 32: error 0.123833, held back 0.124604 (44s)
+  round 1, pass 33: error 0.123826, held back 0.124587 (45s)
+  round 1, pass 34: error 0.123819, held back 0.124574 (45s)
+  round 1, pass 35: error 0.123813, held back 0.124559 (46s)
+  round 1, pass 36: error 0.123808, held back 0.124554 (46s)
+  round 1, pass 37: error 0.123802, held back 0.124538 (47s)
+  round 1, pass 38: error 0.123798, held back 0.124529 (48s)
+  round 1, pass 39: error 0.123794, held back 0.124516 (48s)
+  round 1, pass 40: error 0.123794, held back 0.124516 (49s)
+  round 2, pass 41: error 0.123788, held back 0.124501 (49s)
+  round 2, pass 42: error 0.123788, held back 0.124503 (50s)
+  round 2, pass 43: error 0.123787, held back 0.124504 (51s)
+  round 2, pass 44: error 0.123787, held back 0.124504 (51s)
+  round 3, pass 45: error 0.123780, held back 0.124506 (52s)
+  round 3, pass 46: error 0.123779, held back 0.124505 (52s)
+  round 3, pass 47: error 0.123779, held back 0.124502 (53s)
+  round 3, pass 48: error 0.123778, held back 0.124500 (54s)
+  round 3, pass 49: error 0.123778, held back 0.124499 (54s)
+  round 3, pass 50: error 0.123778, held back 0.124499 (55s)
+  round 3, pass 51: error 0.123778, held back 0.124498 (55s)
+  round 3, pass 52: error 0.123778, held back 0.124498 (56s)
+  round 3, pass 53: error 0.123778, held back 0.124498 (57s)
+  round 3, pass 54: error 0.123778, held back 0.124497 (57s)
+  round 3, pass 55: error 0.123778, held back 0.124497 (58s)
+
+Texel tuning on 187,319 self-play positions (168,588 training, 18,731 held back), K = 0.791
+  error, training:  0.125472 -> 0.123778
+  error, held back: 0.126468 -> 0.124497   (should drop too, or it's overfitting)
+
+  number                                     before    after
+  PIECE_VALUES[knight]                        3.000    3.000
+  PIECE_VALUES[bishop]                        3.000    2.962
+  PIECE_VALUES[rook]                          5.000    4.688
+  PIECE_VALUES[queen]                         9.000   10.237
+  MOBILITY_WEIGHTS[knight]                    0.040    0.057
+  MOBILITY_WEIGHTS[bishop]                    0.050    0.098
+  MOBILITY_WEIGHTS[rook]                      0.020    0.060
+  MOBILITY_WEIGHTS[queen]                     0.010    0.023
+  MOBILITY_WEIGHTS_ENDGAME[knight]            0.040    0.025
+  MOBILITY_WEIGHTS_ENDGAME[bishop]            0.050    0.056
+  MOBILITY_WEIGHTS_ENDGAME[rook]              0.040    0.120
+  MOBILITY_WEIGHTS_ENDGAME[queen]             0.020    0.060
+  DOUBLED_PAWN_PENALTY[middlegame]            0.100    0.010
+  DOUBLED_PAWN_PENALTY[endgame]               0.200    0.323
+  ISOLATED_PAWN_PENALTY[middlegame]           0.100    0.001
+  ISOLATED_PAWN_PENALTY[endgame]              0.200    0.002
+  ISOLATED_OPEN_PAWN_PENALTY[middlegame]      0.200    0.170
+  ISOLATED_OPEN_PAWN_PENALTY[endgame]         0.200    0.035
+  PASSED_PAWN_MIN[middlegame]                 0.100    0.001
+  PASSED_PAWN_MIN[endgame]                    0.200    0.268
+  PASSED_PAWN_MAX[middlegame]                 0.700    0.569
+  PASSED_PAWN_MAX[endgame]                    1.400    2.222
+  BISHOP_PAIR_BONUS[middlegame]               0.300    0.004
+  BISHOP_PAIR_BONUS[endgame]                  0.500    0.906
+  KING_ATTACK_OPENING                        20.000   40.250
+===== exit code 0 after 0m 58s =====
+
+===== 3. verification match, 1s per move (21:04) =====
+Tuned vs current engine: 400 games, 1s per move
+  20/400 games | 2m 06s so far | about 40m 01s left
+  40/400 games | 3m 51s so far | about 34m 44s left
+  60/400 games | 5m 05s so far | about 28m 52s left
+  80/400 games | 6m 32s so far | about 26m 11s left
+  100/400 games | 8m 08s so far | about 24m 24s left
+  120/400 games | 9m 27s so far | about 22m 03s left
+  140/400 games | 11m 04s so far | about 20m 33s left
+  160/400 games | 12m 13s so far | about 18m 20s left
+  180/400 games | 13m 37s so far | about 16m 39s left
+  200/400 games | 15m 03s so far | about 15m 03s left
+  220/400 games | 16m 35s so far | about 13m 34s left
+  240/400 games | 17m 51s so far | about 11m 54s left
+  260/400 games | 19m 40s so far | about 10m 35s left
+  280/400 games | 21m 07s so far | about 9m 03s left
+  300/400 games | 22m 39s so far | about 7m 33s left
+  320/400 games | 24m 09s so far | about 6m 02s left
+  340/400 games | 25m 30s so far | about 4m 30s left
+  360/400 games | 26m 59s so far | about 2m 59s left
+  380/400 games | 28m 08s so far | about 1m 28s left
+  400/400 games | 29m 47s so far | about 0m 00s left
+
+Tuned vs current engine, 1s per move each, 400 games in 30 min
+  tuned: 147 W / 48 D / 205 L, score 42.8%
+  Elo the tuning adds: -51   95% range [-84, -19]
+  the tuned numbers are weaker
+===== exit code 0 after 29m 48s =====
+
+===== 4. Stockfish rating with the tuned numbers, 1s per move (21:34) =====
+Stockfish: C:\Users\phucd\stockfish\stockfish\stockfish-windows-x86-64-universal.exe
+Engine runs on: C:\Users\phucd\pypy\pypy3.11-v8.0.1-win64\pypy.exe
+Engine uses tuned numbers from: C:\Users\phucd\gui-chess-engine\tests\results\texel\tuned_params.json
+Engine vs Stockfish at [1500, 1750, 2000, 2250] Elo: 400 games, 1s per move
+  1/400 games | 0m 42s so far | about 4h 44m left     2/400 games | 0m 48s so far | about 2h 41m left     3/400 games | 1m 05s so far | about 2h 25m left     4/400 games | 1m 07s so far | about 1h 51m left     5/400 games | 1m 07s so far | about 1h 29m left     6/400 games | 1m 17s so far | about 1h 24m left     7/400 games | 1m 20s so far | about 1h 15m left     8/400 games | 1m 23s so far | about 1h 07m left     9/400 games | 1m 25s so far | about 1h 01m left     10/400 games | 1m 26s so far | about 55m 54s left     11/400 games | 1m 27s so far | about 51m 17s left     12/400 games | 1m 35s so far | about 51m 17s left     13/400 games | 1m 38s so far | about 49m 05s left     14/400 games | 1m 39s so far | about 45m 46s left     15/400 games | 1m 40s so far | about 43m 11s left     16/400 games | 1m 43s so far | about 41m 23s left     17/400 games | 1m 45s so far | about 39m 28s left     18/400 games | 1m 46s so far | about 37m 47s left     19/400 games | 1m 49s so far | about 36m 44s left     20/400 games | 1m 50s so far | about 34m 53s left     21/400 games | 1m 53s so far | about 34m 17s left     22/400 games | 1m 55s so far | about 33m 11s left     23/400 games | 1m 58s so far | about 32m 20s left     24/400 games | 2m 02s so far | about 32m 00s left     25/400 games | 2m 02s so far | about 30m 43s left     26/400 games | 2m 08s so far | about 30m 42s left     27/400 games | 2m 10s so far | about 29m 58s left     28/400 games | 2m 13s so far | about 29m 35s left     29/400 games | 2m 18s so far | about 29m 38s left     30/400 games | 2m 22s so far | about 29m 17s left     31/400 games | 2m 24s so far | about 28m 44s left     32/400 games | 2m 29s so far | about 28m 34s left     33/400 games | 2m 31s so far | about 28m 00s left     34/400 games | 2m 32s so far | about 27m 24s left     35/400 games | 2m 40s so far | about 27m 52s left     36/400 games | 2m 42s so far | about 27m 24s left     37/400 games | 2m 45s so far | about 27m 05s left     38/400 games | 2m 48s so far | about 26m 48s left     39/400 games | 2m 59s so far | about 27m 38s left     40/400 games | 2m 59s so far | about 26m 52s left     41/400 games | 3m 01s so far | about 26m 32s left     42/400 games | 3m 08s so far | about 26m 50s left     43/400 games | 3m 10s so far | about 26m 18s left     44/400 games | 3m 14s so far | about 26m 10s left     45/400 games | 3m 23s so far | about 26m 41s left     46/400 games | 3m 31s so far | about 27m 09s left     47/400 games | 3m 35s so far | about 26m 56s left     48/400 games | 3m 36s so far | about 26m 25s left     49/400 games | 3m 39s so far | about 26m 11s left     50/400 games | 3m 44s so far | about 26m 11s left     51/400 games | 3m 57s so far | about 27m 03s left     52/400 games | 3m 58s so far | about 26m 32s left     53/400 games | 3m 59s so far | about 26m 10s left     54/400 games | 4m 03s so far | about 26m 03s left     55/400 games | 4m 06s so far | about 25m 44s left     56/400 games | 4m 09s so far | about 25m 30s left     57/400 games | 4m 12s so far | about 25m 16s left     58/400 games | 4m 12s so far | about 24m 51s left     59/400 games | 4m 18s so far | about 24m 51s left     60/400 games | 4m 20s so far | about 24m 34s left     61/400 games | 4m 20s so far | about 24m 06s left     62/400 games | 4m 20s so far | about 23m 41s left     63/400 games | 4m 36s so far | about 24m 38s left     64/400 games | 4m 42s so far | about 24m 40s left     65/400 games | 4m 45s so far | about 24m 33s left     66/400 games | 4m 52s so far | about 24m 40s left     67/400 games | 4m 52s so far | about 24m 15s left     68/400 games | 4m 54s so far | about 23m 56s left     69/400 games | 4m 55s so far | about 23m 38s left     70/400 games | 4m 59s so far | about 23m 33s left     71/400 games | 5m 00s so far | about 23m 10s left     72/400 games | 5m 03s so far | about 23m 01s left     73/400 games | 5m 10s so far | about 23m 09s left     74/400 games | 5m 10s so far | about 22m 47s left     75/400 games | 5m 14s so far | about 22m 43s left     76/400 games | 5m 17s so far | about 22m 33s left     77/400 games | 5m 19s so far | about 22m 21s left     78/400 games | 5m 20s so far | about 22m 01s left     79/400 games | 5m 21s so far | about 21m 44s left     80/400 games | 5m 21s so far | about 21m 26s left     81/400 games | 5m 25s so far | about 21m 23s left     82/400 games | 5m 26s so far | about 21m 05s left     83/400 games | 5m 26s so far | about 20m 47s left     84/400 games | 5m 30s so far | about 20m 41s left     85/400 games | 5m 32s so far | about 20m 34s left     86/400 games | 5m 42s so far | about 20m 50s left     87/400 games | 5m 55s so far | about 21m 20s left     88/400 games | 5m 57s so far | about 21m 07s left     89/400 games | 6m 04s so far | about 21m 12s left     90/400 games | 6m 05s so far | about 20m 57s left     91/400 games | 6m 06s so far | about 20m 44s left     92/400 games | 6m 11s so far | about 20m 44s left     93/400 games | 6m 13s so far | about 20m 32s left     94/400 games | 6m 16s so far | about 20m 24s left     95/400 games | 6m 18s so far | about 20m 15s left     96/400 games | 6m 22s so far | about 20m 10s left     97/400 games | 6m 23s so far | about 19m 56s left     98/400 games | 6m 23s so far | about 19m 43s left     99/400 games | 6m 25s so far | about 19m 31s left     100/400 games | 6m 27s so far | about 19m 23s left     101/400 games | 6m 30s so far | about 19m 16s left     102/400 games | 6m 33s so far | about 19m 09s left     103/400 games | 6m 41s so far | about 19m 18s left     104/400 games | 6m 41s so far | about 19m 03s left     105/400 games | 6m 47s so far | about 19m 05s left     106/400 games | 6m 48s so far | about 18m 51s left     107/400 games | 6m 54s so far | about 18m 55s left     108/400 games | 6m 56s so far | about 18m 46s left     109/400 games | 7m 03s so far | about 18m 51s left     110/400 games | 7m 04s so far | about 18m 38s left     111/400 games | 7m 12s so far | about 18m 45s left     112/400 games | 7m 19s so far | about 18m 49s left     113/400 games | 7m 21s so far | about 18m 40s left     114/400 games | 7m 22s so far | about 18m 31s left     115/400 games | 7m 31s so far | about 18m 39s left     116/400 games | 7m 38s so far | about 18m 42s left     117/400 games | 7m 39s so far | about 18m 32s left     118/400 games | 7m 43s so far | about 18m 28s left     119/400 games | 7m 46s so far | about 18m 22s left     120/400 games | 7m 49s so far | about 18m 15s left     121/400 games | 7m 51s so far | about 18m 06s left     122/400 games | 7m 53s so far | about 17m 58s left     123/400 games | 7m 54s so far | about 17m 48s left     124/400 games | 7m 56s so far | about 17m 39s left     125/400 games | 7m 59s so far | about 17m 34s left     126/400 games | 8m 02s so far | about 17m 28s left     127/400 games | 8m 05s so far | about 17m 24s left     128/400 games | 8m 08s so far | about 17m 19s left     129/400 games | 8m 17s so far | about 17m 24s left     130/400 games | 8m 20s so far | about 17m 19s left     131/400 games | 8m 25s so far | about 17m 17s left     132/400 games | 8m 26s so far | about 17m 08s left     133/400 games | 8m 31s so far | about 17m 06s left     134/400 games | 8m 33s so far | about 16m 59s left     135/400 games | 8m 34s so far | about 16m 49s left     136/400 games | 8m 34s so far | about 16m 38s left     137/400 games | 8m 42s so far | about 16m 43s left     138/400 games | 8m 42s so far | about 16m 32s left     139/400 games | 8m 44s so far | about 16m 24s left     140/400 games | 8m 44s so far | about 16m 14s left     141/400 games | 8m 46s so far | about 16m 06s left     142/400 games | 8m 51s so far | about 16m 05s left     143/400 games | 8m 56s so far | about 16m 03s left     144/400 games | 8m 58s so far | about 15m 56s left     145/400 games | 9m 03s so far | about 15m 55s left     146/400 games | 9m 11s so far | about 15m 59s left     147/400 games | 9m 16s so far | about 15m 57s left     148/400 games | 9m 19s so far | about 15m 52s left     149/400 games | 9m 22s so far | about 15m 48s left     150/400 games | 9m 29s so far | about 15m 49s left     151/400 games | 9m 32s so far | about 15m 43s left     152/400 games | 9m 33s so far | about 15m 35s left     153/400 games | 9m 36s so far | about 15m 31s left     154/400 games | 9m 38s so far | about 15m 24s left     155/400 games | 9m 39s so far | about 15m 15s left     156/400 games | 9m 43s so far | about 15m 13s left     157/400 games | 9m 47s so far | about 15m 09s left     158/400 games | 9m 49s so far | about 15m 02s left     159/400 games | 9m 49s so far | about 14m 53s left     160/400 games | 9m 57s so far | about 14m 56s left     161/400 games | 9m 58s so far | about 14m 48s left     162/400 games | 10m 02s so far | about 14m 45s left     163/400 games | 10m 03s so far | about 14m 37s left     164/400 games | 10m 03s so far | about 14m 28s left     165/400 games | 10m 11s so far | about 14m 30s left     166/400 games | 10m 12s so far | about 14m 23s left     167/400 games | 10m 18s so far | about 14m 22s left     168/400 games | 10m 19s so far | about 14m 15s left     169/400 games | 10m 23s so far | about 14m 12s left     170/400 games | 10m 23s so far | about 14m 04s left     171/400 games | 10m 26s so far | about 13m 59s left     172/400 games | 10m 27s so far | about 13m 51s left     173/400 games | 10m 40s so far | about 14m 00s left     174/400 games | 10m 53s so far | about 14m 09s left     175/400 games | 10m 54s so far | about 14m 00s left     176/400 games | 11m 02s so far | about 14m 02s left     177/400 games | 11m 06s so far | about 13m 59s left     178/400 games | 11m 14s so far | about 14m 01s left     179/400 games | 11m 18s so far | about 13m 58s left     180/400 games | 11m 20s so far | about 13m 51s left     181/400 games | 11m 23s so far | about 13m 47s left     182/400 games | 11m 24s so far | about 13m 39s left     183/400 games | 11m 27s so far | about 13m 35s left     184/400 games | 11m 30s so far | about 13m 30s left     185/400 games | 11m 32s so far | about 13m 24s left     186/400 games | 11m 34s so far | about 13m 18s left     187/400 games | 11m 34s so far | about 13m 10s left     188/400 games | 11m 35s so far | about 13m 04s left     189/400 games | 11m 43s so far | about 13m 05s left     190/400 games | 11m 44s so far | about 12m 58s left     191/400 games | 11m 45s so far | about 12m 52s left     192/400 games | 11m 50s so far | about 12m 49s left     193/400 games | 11m 54s so far | about 12m 46s left     194/400 games | 11m 59s so far | about 12m 43s left     195/400 games | 12m 05s so far | about 12m 42s left     196/400 games | 12m 14s so far | about 12m 44s left     197/400 games | 12m 17s so far | about 12m 40s left     198/400 games | 12m 18s so far | about 12m 33s left     199/400 games | 12m 25s so far | about 12m 32s left     200/400 games | 12m 32s so far | about 12m 32s left     201/400 games | 12m 33s so far | about 12m 25s left     202/400 games | 12m 37s so far | about 12m 22s left     203/400 games | 12m 37s so far | about 12m 14s left     204/400 games | 12m 47s so far | about 12m 17s left     205/400 games | 12m 49s so far | about 12m 11s left     206/400 games | 12m 51s so far | about 12m 06s left     207/400 games | 12m 51s so far | about 11m 59s left     208/400 games | 12m 51s so far | about 11m 52s left     209/400 games | 12m 59s so far | about 11m 52s left     210/400 games | 13m 00s so far | about 11m 45s left     211/400 games | 13m 01s so far | about 11m 39s left     212/400 games | 13m 06s so far | about 11m 37s left     213/400 games | 13m 09s so far | about 11m 32s left     214/400 games | 13m 13s so far | about 11m 29s left     215/400 games | 13m 13s so far | about 11m 23s left     216/400 games | 13m 15s so far | about 11m 17s left     217/400 games | 13m 16s so far | about 11m 11s left     218/400 games | 13m 25s so far | about 11m 12s left     219/400 games | 13m 27s so far | about 11m 07s left     220/400 games | 13m 28s so far | about 11m 01s left     221/400 games | 13m 29s so far | about 10m 55s left     222/400 games | 13m 30s so far | about 10m 50s left     223/400 games | 13m 31s so far | about 10m 43s left     224/400 games | 13m 35s so far | about 10m 41s left     225/400 games | 13m 36s so far | about 10m 34s left     226/400 games | 13m 47s so far | about 10m 36s left     227/400 games | 13m 50s so far | about 10m 33s left     228/400 games | 13m 52s so far | about 10m 28s left     229/400 games | 13m 54s so far | about 10m 23s left     230/400 games | 13m 57s so far | about 10m 18s left     231/400 games | 13m 57s so far | about 10m 12s left     232/400 games | 14m 12s so far | about 10m 17s left     233/400 games | 14m 12s so far | about 10m 10s left     234/400 games | 14m 13s so far | about 10m 05s left     235/400 games | 14m 14s so far | about 10m 00s left     236/400 games | 14m 15s so far | about 9m 54s left     237/400 games | 14m 18s so far | about 9m 50s left     238/400 games | 14m 19s so far | about 9m 45s left     239/400 games | 14m 20s so far | about 9m 39s left     240/400 games | 14m 21s so far | about 9m 34s left     241/400 games | 14m 27s so far | about 9m 32s left     242/400 games | 14m 27s so far | about 9m 26s left     243/400 games | 14m 30s so far | about 9m 22s left     244/400 games | 14m 31s so far | about 9m 17s left     245/400 games | 14m 34s so far | about 9m 13s left     246/400 games | 14m 44s so far | about 9m 13s left     247/400 games | 14m 50s so far | about 9m 11s left     248/400 games | 14m 59s so far | about 9m 11s left     249/400 games | 15m 00s so far | about 9m 05s left     250/400 games | 15m 15s so far | about 9m 09s left     251/400 games | 15m 18s so far | about 9m 04s left     252/400 games | 15m 19s so far | about 9m 00s left     253/400 games | 15m 20s so far | about 8m 54s left     254/400 games | 15m 29s so far | about 8m 54s left     255/400 games | 15m 30s so far | about 8m 49s left     256/400 games | 15m 31s so far | about 8m 43s left     257/400 games | 15m 34s so far | about 8m 39s left     258/400 games | 15m 40s so far | about 8m 37s left     259/400 games | 15m 40s so far | about 8m 31s left     260/400 games | 15m 40s so far | about 8m 26s left     261/400 games | 15m 42s so far | about 8m 21s left     262/400 games | 15m 45s so far | about 8m 17s left     263/400 games | 15m 58s so far | about 8m 19s left     264/400 games | 16m 00s so far | about 8m 14s left     265/400 games | 16m 00s so far | about 8m 09s left     266/400 games | 16m 04s so far | about 8m 05s left     267/400 games | 16m 05s so far | about 8m 01s left     268/400 games | 16m 23s so far | about 8m 04s left     269/400 games | 16m 24s so far | about 7m 59s left     270/400 games | 16m 25s so far | about 7m 54s left     271/400 games | 16m 28s so far | about 7m 50s left     272/400 games | 16m 30s so far | about 7m 45s left     273/400 games | 16m 34s so far | about 7m 42s left     274/400 games | 16m 38s so far | about 7m 39s left     275/400 games | 16m 38s so far | about 7m 33s left     276/400 games | 16m 42s so far | about 7m 30s left     277/400 games | 16m 43s so far | about 7m 25s left     278/400 games | 16m 45s so far | about 7m 21s left     279/400 games | 16m 47s so far | about 7m 16s left     280/400 games | 16m 57s so far | about 7m 15s left     281/400 games | 16m 58s so far | about 7m 11s left     282/400 games | 17m 05s so far | about 7m 08s left     283/400 games | 17m 06s so far | about 7m 04s left     284/400 games | 17m 16s so far | about 7m 03s left     285/400 games | 17m 23s so far | about 7m 01s left     286/400 games | 17m 28s so far | about 6m 57s left     287/400 games | 17m 33s so far | about 6m 54s left     288/400 games | 17m 33s so far | about 6m 49s left     289/400 games | 17m 34s so far | about 6m 44s left     290/400 games | 17m 35s so far | about 6m 40s left     291/400 games | 17m 37s so far | about 6m 35s left     292/400 games | 17m 47s so far | about 6m 34s left     293/400 games | 17m 48s so far | about 6m 30s left     294/400 games | 17m 50s so far | about 6m 25s left     295/400 games | 17m 51s so far | about 6m 21s left     296/400 games | 17m 53s so far | about 6m 17s left     297/400 games | 18m 04s so far | about 6m 16s left     298/400 games | 18m 05s so far | about 6m 11s left     299/400 games | 18m 10s so far | about 6m 08s left     300/400 games | 18m 12s so far | about 6m 04s left     301/400 games | 18m 21s so far | about 6m 02s left     302/400 games | 18m 24s so far | about 5m 58s left     303/400 games | 18m 26s so far | about 5m 54s left     304/400 games | 18m 28s so far | about 5m 49s left     305/400 games | 18m 36s so far | about 5m 47s left     306/400 games | 18m 37s so far | about 5m 43s left     307/400 games | 18m 39s so far | about 5m 39s left     308/400 games | 18m 44s so far | about 5m 35s left     309/400 games | 18m 44s so far | about 5m 31s left     310/400 games | 18m 47s so far | about 5m 27s left     311/400 games | 18m 56s so far | about 5m 25s left     312/400 games | 18m 57s so far | about 5m 20s left     313/400 games | 18m 58s so far | about 5m 16s left     314/400 games | 19m 02s so far | about 5m 12s left     315/400 games | 19m 13s so far | about 5m 11s left     316/400 games | 19m 16s so far | about 5m 07s left     317/400 games | 19m 19s so far | about 5m 03s left     318/400 games | 19m 25s so far | about 5m 00s left     319/400 games | 19m 30s so far | about 4m 57s left     320/400 games | 19m 33s so far | about 4m 53s left     321/400 games | 19m 37s so far | about 4m 49s left     322/400 games | 19m 39s so far | about 4m 45s left     323/400 games | 19m 40s so far | about 4m 41s left     324/400 games | 19m 44s so far | about 4m 37s left     325/400 games | 19m 46s so far | about 4m 33s left     326/400 games | 19m 50s so far | about 4m 30s left     327/400 games | 19m 50s so far | about 4m 25s left     328/400 games | 19m 56s so far | about 4m 22s left     329/400 games | 19m 59s so far | about 4m 18s left     330/400 games | 20m 00s so far | about 4m 14s left     331/400 games | 20m 02s so far | about 4m 10s left     332/400 games | 20m 10s so far | about 4m 07s left     333/400 games | 20m 11s so far | about 4m 03s left     334/400 games | 20m 12s so far | about 3m 59s left     335/400 games | 20m 13s so far | about 3m 55s left     336/400 games | 20m 15s so far | about 3m 51s left     337/400 games | 20m 17s so far | about 3m 47s left     338/400 games | 20m 23s so far | about 3m 44s left     339/400 games | 20m 24s so far | about 3m 40s left     340/400 games | 20m 35s so far | about 3m 37s left     341/400 games | 20m 37s so far | about 3m 34s left     342/400 games | 20m 46s so far | about 3m 31s left     343/400 games | 20m 46s so far | about 3m 27s left     344/400 games | 20m 48s so far | about 3m 23s left     345/400 games | 20m 48s so far | about 3m 19s left     346/400 games | 20m 49s so far | about 3m 15s left     347/400 games | 20m 53s so far | about 3m 11s left     348/400 games | 20m 54s so far | about 3m 07s left     349/400 games | 20m 58s so far | about 3m 03s left     350/400 games | 21m 01s so far | about 3m 00s left     351/400 games | 21m 02s so far | about 2m 56s left     352/400 games | 21m 02s so far | about 2m 52s left     353/400 games | 21m 05s so far | about 2m 48s left     354/400 games | 21m 16s so far | about 2m 45s left     355/400 games | 21m 20s so far | about 2m 42s left     356/400 games | 21m 21s so far | about 2m 38s left     357/400 games | 21m 28s so far | about 2m 35s left     358/400 games | 21m 28s so far | about 2m 31s left     359/400 games | 21m 31s so far | about 2m 27s left     360/400 games | 21m 40s so far | about 2m 24s left     361/400 games | 21m 51s so far | about 2m 21s left     362/400 games | 21m 51s so far | about 2m 17s left     363/400 games | 21m 56s so far | about 2m 14s left     364/400 games | 21m 56s so far | about 2m 10s left     365/400 games | 21m 58s so far | about 2m 06s left     366/400 games | 22m 01s so far | about 2m 02s left     367/400 games | 22m 02s so far | about 1m 58s left     368/400 games | 22m 03s so far | about 1m 55s left     369/400 games | 22m 05s so far | about 1m 51s left     370/400 games | 22m 08s so far | about 1m 47s left     371/400 games | 22m 10s so far | about 1m 44s left     372/400 games | 22m 14s so far | about 1m 40s left     373/400 games | 22m 22s so far | about 1m 37s left     374/400 games | 22m 26s so far | about 1m 33s left     375/400 games | 22m 29s so far | about 1m 29s left     376/400 games | 22m 31s so far | about 1m 26s left     377/400 games | 22m 44s so far | about 1m 23s left     378/400 games | 22m 48s so far | about 1m 19s left     379/400 games | 22m 53s so far | about 1m 16s left     380/400 games | 22m 57s so far | about 1m 12s left     381/400 games | 23m 01s so far | about 1m 08s left     382/400 games | 23m 05s so far | about 1m 05s left     383/400 games | 23m 06s so far | about 1m 01s left     384/400 games | 23m 07s so far | about 0m 57s left     385/400 games | 23m 15s so far | about 0m 54s left     386/400 games | 23m 15s so far | about 0m 50s left     387/400 games | 23m 21s so far | about 0m 47s left     388/400 games | 23m 21s so far | about 0m 43s left     389/400 games | 23m 26s so far | about 0m 39s left     390/400 games | 23m 43s so far | about 0m 36s left     391/400 games | 23m 47s so far | about 0m 32s left     392/400 games | 23m 48s so far | about 0m 29s left     393/400 games | 23m 51s so far | about 0m 25s left     394/400 games | 23m 57s so far | about 0m 21s left     395/400 games | 24m 06s so far | about 0m 18s left     396/400 games | 24m 10s so far | about 0m 14s left     397/400 games | 24m 16s so far | about 0m 11s left     398/400 games | 24m 25s so far | about 0m 07s left     399/400 games | 24m 39s so far | about 0m 03s left     400/400 games | 25m 30s so far | about 0m 00s left   
+
+Engine (on pypy.exe, tuned numbers) vs Stockfish capped to set Elo levels, 1s per move each, 400 games in 26 min
+
+  Stockfish Elo   W /  D /  L    score   rating it implies on its own
+           1500    65 /  4 / 31    67.0%   1623
+           1750    26 / 31 / 43    41.5%   1690
+           2000    17 / 25 / 58    29.5%   1849
+           2250    13 / 15 / 72    20.5%   2015
+
+  Rating (best fit to all levels): about 1759   95% range from the games alone [1717, 1800]
+  Referee: 0 games with an illegal move, mismatched boards or an engine error
+
+Saved to C:\Users\phucd\gui-chess-engine\tests\results\stockfish_rating_results_1s_tuned.txt
+===== exit code 0 after 25m 30s =====
+
+===== 4. Stockfish rating with the tuned numbers, 10s per move (21:59) =====
+Stockfish: C:\Users\phucd\stockfish\stockfish\stockfish-windows-x86-64-universal.exe
+Engine runs on: C:\Users\phucd\pypy\pypy3.11-v8.0.1-win64\pypy.exe
+Engine uses tuned numbers from: C:\Users\phucd\gui-chess-engine\tests\results\texel\tuned_params.json
+Engine vs Stockfish at [1500, 1750, 2000, 2250] Elo: 200 games, 10s per move
+  1/200 games | 7m 11s so far | about 23h 49m left     2/200 games | 8m 52s so far | about 14h 38m left     3/200 games | 10m 15s so far | about 11h 13m left     4/200 games | 11m 01s so far | about 9h 00m left     5/200 games | 11m 11s so far | about 7h 16m left     6/200 games | 11m 41s so far | about 6h 17m left     7/200 games | 11m 43s so far | about 5h 23m left     8/200 games | 11m 51s so far | about 4h 44m left     9/200 games | 12m 31s so far | about 4h 25m left     10/200 games | 13m 11s so far | about 4h 10m left     11/200 games | 13m 14s so far | about 3h 47m left     12/200 games | 13m 45s so far | about 3h 35m left     13/200 games | 13m 51s so far | about 3h 19m left     14/200 games | 14m 51s so far | about 3h 17m left     15/200 games | 15m 01s so far | about 3h 05m left     16/200 games | 15m 11s so far | about 2h 54m left     17/200 games | 15m 21s so far | about 2h 45m left     18/200 games | 15m 26s so far | about 2h 36m left     19/200 games | 17m 20s so far | about 2h 45m left     20/200 games | 18m 31s so far | about 2h 46m left     21/200 games | 18m 42s so far | about 2h 39m left     22/200 games | 20m 13s so far | about 2h 43m left     23/200 games | 22m 32s so far | about 2h 53m left     24/200 games | 22m 40s so far | about 2h 46m left     25/200 games | 22m 54s so far | about 2h 40m left     26/200 games | 23m 06s so far | about 2h 34m left     27/200 games | 23m 12s so far | about 2h 28m left     28/200 games | 23m 17s so far | about 2h 23m left     29/200 games | 23m 19s so far | about 2h 17m left     30/200 games | 23m 33s so far | about 2h 13m left     31/200 games | 24m 01s so far | about 2h 10m left     32/200 games | 24m 25s so far | about 2h 08m left     33/200 games | 24m 54s so far | about 2h 06m left     34/200 games | 24m 57s so far | about 2h 01m left     35/200 games | 25m 22s so far | about 1h 59m left     36/200 games | 25m 24s so far | about 1h 55m left     37/200 games | 25m 28s so far | about 1h 52m left     38/200 games | 25m 42s so far | about 1h 49m left     39/200 games | 25m 53s so far | about 1h 46m left     40/200 games | 26m 56s so far | about 1h 47m left     41/200 games | 27m 04s so far | about 1h 44m left     42/200 games | 27m 56s so far | about 1h 45m left     43/200 games | 28m 04s so far | about 1h 42m left     44/200 games | 28m 15s so far | about 1h 40m left     45/200 games | 31m 03s so far | about 1h 46m left     46/200 games | 31m 25s so far | about 1h 45m left     47/200 games | 32m 03s so far | about 1h 44m left     48/200 games | 32m 49s so far | about 1h 43m left     49/200 games | 34m 54s so far | about 1h 47m left     50/200 games | 35m 05s so far | about 1h 45m left     51/200 games | 35m 25s so far | about 1h 43m left     52/200 games | 35m 36s so far | about 1h 41m left     53/200 games | 36m 20s so far | about 1h 40m left     54/200 games | 38m 29s so far | about 1h 44m left     55/200 games | 38m 39s so far | about 1h 41m left     56/200 games | 38m 45s so far | about 1h 39m left     57/200 games | 39m 34s so far | about 1h 39m left     58/200 games | 39m 52s so far | about 1h 37m left     59/200 games | 40m 56s so far | about 1h 37m left     60/200 games | 41m 01s so far | about 1h 35m left     61/200 games | 41m 36s so far | about 1h 34m left     62/200 games | 42m 55s so far | about 1h 35m left     63/200 games | 43m 02s so far | about 1h 33m left     64/200 games | 43m 03s so far | about 1h 31m left     65/200 games | 43m 08s so far | about 1h 29m left     66/200 games | 43m 28s so far | about 1h 28m left     67/200 games | 44m 00s so far | about 1h 27m left     68/200 games | 45m 19s so far | about 1h 27m left     69/200 games | 46m 20s so far | about 1h 27m left     70/200 games | 47m 18s so far | about 1h 27m left     71/200 games | 49m 17s so far | about 1h 29m left     72/200 games | 49m 56s so far | about 1h 28m left     73/200 games | 50m 24s so far | about 1h 27m left     74/200 games | 50m 28s so far | about 1h 25m left     75/200 games | 50m 45s so far | about 1h 24m left     76/200 games | 50m 46s so far | about 1h 22m left     77/200 games | 51m 20s so far | about 1h 22m left     78/200 games | 51m 50s so far | about 1h 21m left     79/200 games | 51m 58s so far | about 1h 19m left     80/200 games | 52m 55s so far | about 1h 19m left     81/200 games | 52m 59s so far | about 1h 17m left     82/200 games | 53m 36s so far | about 1h 17m left     83/200 games | 53m 54s so far | about 1h 15m left     84/200 games | 53m 56s so far | about 1h 14m left     85/200 games | 54m 24s so far | about 1h 13m left     86/200 games | 54m 30s so far | about 1h 12m left     87/200 games | 54m 35s so far | about 1h 10m left     88/200 games | 54m 35s so far | about 1h 09m left     89/200 games | 54m 41s so far | about 1h 08m left     90/200 games | 54m 47s so far | about 1h 06m left     91/200 games | 55m 52s so far | about 1h 06m left     92/200 games | 56m 06s so far | about 1h 05m left     93/200 games | 57m 27s so far | about 1h 06m left     94/200 games | 1h 00m so far | about 1h 08m left     95/200 games | 1h 01m so far | about 1h 07m left     96/200 games | 1h 01m so far | about 1h 06m left     97/200 games | 1h 02m so far | about 1h 06m left     98/200 games | 1h 02m so far | about 1h 05m left     99/200 games | 1h 02m so far | about 1h 04m left     100/200 games | 1h 03m so far | about 1h 03m left     101/200 games | 1h 03m so far | about 1h 02m left     102/200 games | 1h 03m so far | about 1h 01m left     103/200 games | 1h 03m so far | about 1h 00m left     104/200 games | 1h 04m so far | about 59m 24s left     105/200 games | 1h 04m so far | about 58m 23s left     106/200 games | 1h 04m so far | about 57m 30s left     107/200 games | 1h 05m so far | about 56m 36s left     108/200 games | 1h 07m so far | about 57m 26s left     109/200 games | 1h 08m so far | about 57m 05s left     110/200 games | 1h 08m so far | about 55m 59s left     111/200 games | 1h 09m so far | about 55m 41s left     112/200 games | 1h 10m so far | about 55m 03s left     113/200 games | 1h 10m so far | about 54m 24s left     114/200 games | 1h 11m so far | about 53m 58s left     115/200 games | 1h 12m so far | about 53m 40s left     116/200 games | 1h 13m so far | about 53m 32s left     117/200 games | 1h 14m so far | about 52m 57s left     118/200 games | 1h 14m so far | about 51m 54s left     119/200 games | 1h 15m so far | about 51m 05s left     120/200 games | 1h 16m so far | about 50m 41s left     121/200 games | 1h 16m so far | about 49m 56s left     122/200 games | 1h 17m so far | about 49m 20s left     123/200 games | 1h 17m so far | about 48m 20s left     124/200 games | 1h 17m so far | about 47m 41s left     125/200 games | 1h 18m so far | about 46m 57s left     126/200 games | 1h 18m so far | about 46m 01s left   

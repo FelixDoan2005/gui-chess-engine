@@ -1,28 +1,1079 @@
+import time
+
+from ui.chess_logic import Board, get_all_legal_moves, select_piece, is_legal_move, in_check, insufficient_material, pawn_attack_squares
+from ui.chess_logic import KNIGHT_JUMPS, KING_STEPS, DIAGONAL_DIRECTIONS, STRAIGHT_DIRECTIONS
+
+CHECKMATE_SCORE = 999999
+
+# Difficulty level -> search depth. One level per depth for now; each
+# level will also toggle a specific evaluation feature on/off later.
+DIFFICULTY_DEPTH = {
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+}
+
+# Piece-square tables: from https://chessprogramming.org/Simplified_Evaluation_Function
+# posted by Tomasz Michniewski
+PAWN_TABLE = [
+    [0,   0,   0,   0,   0,   0,   0,   0],
+    [50, 50,  50,  50,  50,  50,  50,  50],
+    [10, 10,  20,  30,  30,  20,  10,  10],
+    [5,   5,  10,  25,  25,  10,   5,   5],
+    [0,   0,   0,  20,  20,   0,   0,   0],
+    [5,  -5, -10,   0,   0, -10,  -5,   5],
+    [5,  10,  10, -20, -20,  10,  10,   5],
+    [0,   0,   0,   0,   0,   0,   0,   0],
+]
+
+KNIGHT_TABLE = [
+    [-50, -40, -30, -30, -30, -30, -40, -50],
+    [-40, -20,   0,   0,   0,   0, -20, -40],
+    [-30,   0,  10,  15,  15,  10,   0, -30],
+    [-30,   5,  15,  20,  20,  15,   5, -30],
+    [-30,   0,  15,  20,  20,  15,   0, -30],
+    [-30,   5,  10,  15,  15,  10,   5, -30],
+    [-40, -20,   0,   5,   5,   0, -20, -40],
+    [-50, -40, -30, -30, -30, -30, -40, -50],
+]
+
+BISHOP_TABLE = [
+    [-20, -10, -10, -10, -10, -10, -10, -20],
+    [-10,   0,   0,   0,   0,   0,   0, -10],
+    [-10,   0,   5,  10,  10,   5,   0, -10],
+    [-10,   5,   5,  10,  10,   5,   5, -10],
+    [-10,   0,  10,  10,  10,  10,   0, -10],
+    [-10,  10,  10,  10,  10,  10,  10, -10],
+    [-10,   5,   0,   0,   0,   0,   5, -10],
+    [-20, -10, -10, -10, -10, -10, -10, -20],
+]
+
+ROOK_TABLE = [
+    [0,   0,   0,   0,   0,   0,   0,   0],
+    [5,  10,  10,  10,  10,  10,  10,   5],
+    [-5,  0,   0,   0,   0,   0,   0,  -5],
+    [-5,  0,   0,   0,   0,   0,   0,  -5],
+    [-5,  0,   0,   0,   0,   0,   0,  -5],
+    [-5,  0,   0,   0,   0,   0,   0,  -5],
+    [-5,  0,   0,   0,   0,   0,   0,  -5],
+    [0,   0,   0,   5,   5,   0,   0,   0],
+]
+
+QUEEN_TABLE = [
+    [-20, -10, -10,  -5,  -5, -10, -10, -20],
+    [-10,   0,   0,   0,   0,   0,   0, -10],
+    [-10,   0,   5,   5,   5,   5,   0, -10],
+    [-5,    0,   5,   5,   5,   5,   0,  -5],
+    [0,     0,   5,   5,   5,   5,   0,  -5],
+    [-10,   5,   5,   5,   5,   5,   0, -10],
+    [-10,   0,   5,   0,   0,   0,   0, -10],
+    [-20, -10, -10,  -5,  -5, -10, -10, -20],
+]
+
+KING_TABLE = [
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-20, -30, -30, -40, -40, -30, -30, -20],
+    [-10, -20, -20, -20, -20, -20, -20, -10],
+    [20,   20,   0,   0,   0,   0,  20,  20],
+    [20,   30,  10,   0,   0,  10,  30,  20],
+]
+
+# Blended in over KING_TABLE as pieces come off (see endgame_weight): with few
+# pieces left the king is safe in the centre and needs to be active.
+KING_ENDGAME_TABLE = [
+    [-50, -40, -30, -20, -20, -30, -40, -50],
+    [-30, -20, -10,   0,   0, -10, -20, -30],
+    [-30, -10,  20,  30,  30,  20, -10, -30],
+    [-30, -10,  30,  40,  40,  30, -10, -30],
+    [-30, -10,  30,  40,  40,  30, -10, -30],
+    [-30, -10,  20,  30,  30,  20, -10, -30],
+    [-30, -30,   0,   0,   0,   0, -30, -30],
+    [-50, -30, -30, -30, -30, -30, -30, -50],
+]
+
+PIECE_SQUARE_TABLES = {
+    "pawn": PAWN_TABLE,
+    "knight": KNIGHT_TABLE,
+    "bishop": BISHOP_TABLE,
+    "rook": ROOK_TABLE,
+    "queen": QUEEN_TABLE,
+    "king": KING_TABLE,
+}
+
+
+def piece_square_value(kind, colour, row, col, weight=0.0):
+    if colour == "white":
+        table_row = row
+    else:
+        table_row = 7 - row
+
+    if kind == "king":
+        return blend(KING_TABLE[table_row][col], KING_ENDGAME_TABLE[table_row][col], weight)
+    return PIECE_SQUARE_TABLES[kind][table_row][col]
+
+
+PIECE_VALUES = {
+    "pawn": 1,
+    "bishop": 3,
+    "knight": 3,
+    "rook": 5,
+    "queen": 9,
+    "king": 100
+}
+
+
 def evaluate(board):
-    pieces = {
-        "pawn": 1,
-        "bishop": 3,
-        "knight": 3,
-        "rook": 5,
-        "queen": 9,
-        "king": 100
-    }
+    grid = board.grid
+    # Worked out once here and shared, instead of each heuristic scanning the
+    # board and recomputing the same things.
+    pieces = piece_coverage(grid)
+    files = both_pawn_files(grid)
+    weight = endgame_weight(board, pieces)
 
-    white_sum = 0
-    black_sum = 0
+    score = 0
+    for r, c, colour, kind, _ in pieces:
+        value = PIECE_VALUES[kind]
+        positional = piece_square_value(kind, colour, r, c, weight) / 100
 
+        total_gain = value + positional
+
+        if colour == "white":
+            score += total_gain
+        else:
+            score -= total_gain
+
+    return (score + mobility(board, weight, pieces) + pawn_structure(board, weight, files)
+            + bishop_pair(board, weight) + mop_up(board)
+            + king_pawn_shield(board, pieces) + king_attackers(board, weight, pieces))
+
+
+# Points per safe move, from Fruit 2.1 (eval.cpp KnightMob/BishopMob/RookMob/
+# QueenMob, centipawns / 100). The queen gets least per move because it has the
+# most moves; rooks and queens get more in the endgame, when lines are open.
+MOBILITY_WEIGHTS = {
+    "knight": 0.04,
+    "bishop": 0.05,
+    "rook": 0.02,
+    "queen": 0.01,
+}
+MOBILITY_WEIGHTS_ENDGAME = {
+    "knight": 0.04,
+    "bishop": 0.05,
+    "rook": 0.04,
+    "queen": 0.02,
+}
+
+def moves_from(covered, grid, colour):
+    # The squares a piece can actually move to: what it covers, minus squares
+    # holding its own side's pieces (those it only defends).
+    moves = []
+    for row, col in covered:
+        target = grid[row][col]
+        if target is None or not target.startswith(colour):
+            moves.append((row, col))
+    return moves
+
+
+def mobility(board, weight=None, pieces=None):
+    if weight is None:
+        weight = endgame_weight(board)
+    if pieces is None:
+        pieces = piece_coverage(board.grid)
+    grid = board.grid
+
+    # Squares each side's pieces shouldn't count: ones attacked by enemy pawns.
+    unsafe = {"white": set(), "black": set()}
+    for _, _, colour, kind, covered in pieces:
+        if kind == "pawn":
+            if colour == "white":
+                unsafe["black"].update(covered)
+            else:
+                unsafe["white"].update(covered)
+
+    per_move = {}
+    for kind in MOBILITY_WEIGHTS:
+        per_move[kind] = blend(MOBILITY_WEIGHTS[kind], MOBILITY_WEIGHTS_ENDGAME[kind], weight)
+
+    score = 0
+    for _, _, colour, kind, covered in pieces:
+        if kind not in MOBILITY_WEIGHTS:
+            continue
+
+        safe_moves = 0
+        for square in moves_from(covered, grid, colour):
+            if square not in unsafe[colour]:
+                safe_moves += 1
+        value = safe_moves * per_move[kind]
+
+        if colour == "white":
+            score += value
+        else:
+            score -= value
+
+    return score
+
+
+# Pawn structure, from Fruit 2.1 (pawn.cpp, centipawns / 100). Fruit has a
+# middlegame and an endgame value for each, blended by endgame_weight.
+DOUBLED_PAWN_PENALTY = {"middlegame": 0.10, "endgame": 0.20}
+ISOLATED_PAWN_PENALTY = {"middlegame": 0.10, "endgame": 0.20}
+ISOLATED_OPEN_PAWN_PENALTY = {"middlegame": 0.20, "endgame": 0.20}  # no enemy pawn in front of it
+
+# Passed pawns: min + (max - min) * scale / 256, where scale is Fruit's Bonus[]
+# table indexed by squares advanced from the starting square (5 = one step
+# from promoting). Nothing extra until the pawn reaches its 4th rank.
+PASSED_PAWN_MIN = {"middlegame": 0.10, "endgame": 0.20}
+PASSED_PAWN_MAX = {"middlegame": 0.70, "endgame": 1.40}
+PASSED_PAWN_SCALE = [0, 0, 26, 77, 154, 256]
+
+
+def pawn_files(grid, colour):
+    column_with_pawns = {}
     for r in range(8):
         for c in range(8):
-            piece = board.grid[r][c]
-            if piece is not None:
-                if piece.startswith("white"):
-                    white_sum += pieces[piece.split("_")[1]]
+            piece = grid[r][c]
+            if piece is None:
+                continue
+            piece_colour, kind = piece.split("_")
+            if kind == "pawn" and piece_colour == colour:
+                if c not in column_with_pawns:
+                    column_with_pawns[c] = [r]
                 else:
-                    black_sum += pieces[piece.split("_")[1]]
+                    column_with_pawns[c].append(r)
+    return column_with_pawns
 
-    return(white_sum,black_sum)
+
+
+def is_passed(row, col, colour, enemy_files):
+    for check_col in (col - 1, col, col + 1):
+        for enemy_row in enemy_files.get(check_col, []):
+            if colour == "white" and enemy_row < row:
+                return False
+            if colour == "black" and enemy_row > row:
+                return False
+    return True
+
+
+def enemy_pawn_in_front(row, col, colour, enemy_files):
+    for enemy_row in enemy_files.get(col, []):
+        if colour == "white" and enemy_row < row:
+            return True
+        if colour == "black" and enemy_row > row:
+            return True
+    return False
+
+
+def both_pawn_files(grid):
+    return {"white": pawn_files(grid, "white"), "black": pawn_files(grid, "black")}
+
+
+def pawn_structure(board, weight=None, files=None):
+    if weight is None:
+        weight = endgame_weight(board)
+    if files is None:
+        files = both_pawn_files(board.grid)
+
+    doubled = blend(DOUBLED_PAWN_PENALTY["middlegame"], DOUBLED_PAWN_PENALTY["endgame"], weight)
+    isolated_penalty = blend(ISOLATED_PAWN_PENALTY["middlegame"], ISOLATED_PAWN_PENALTY["endgame"], weight)
+    isolated_open = blend(ISOLATED_OPEN_PAWN_PENALTY["middlegame"], ISOLATED_OPEN_PAWN_PENALTY["endgame"], weight)
+    passed_min = blend(PASSED_PAWN_MIN["middlegame"], PASSED_PAWN_MIN["endgame"], weight)
+    passed_max = blend(PASSED_PAWN_MAX["middlegame"], PASSED_PAWN_MAX["endgame"], weight)
+
+    score = 0
+
+    for colour in ("white", "black"):
+        if colour == "white":
+            enemy = "black"
+        else:
+            enemy = "white"
+        own_files = files[colour]
+        enemy_files = files[enemy]
+
+        side_score = 0
+
+        for col, rows in own_files.items():
+            if len(rows) > 1:
+                side_score -= doubled * (len(rows) - 1)
+
+            isolated = col - 1 not in own_files and col + 1 not in own_files
+
+            for row in rows:
+                if isolated:
+                    if enemy_pawn_in_front(row, col, colour, enemy_files):
+                        side_score -= isolated_penalty
+                    else:
+                        side_score -= isolated_open
+
+                if is_passed(row, col, colour, enemy_files):
+                    if colour == "white":
+                        advanced = 6 - row   # white pawns start on row 6
+                    else:
+                        advanced = row - 1   # black pawns start on row 1
+                    advanced = max(0, min(advanced, 5))
+                    side_score += passed_min + (passed_max - passed_min) * PASSED_PAWN_SCALE[advanced] / 256
+
+        if colour == "white":
+            score += side_score
+        else:
+            score -= side_score
+
+    return score
+
+
+# Larry Kaufman's 2021 figures: +0.3 in the middlegame, +0.5 in the endgame
+# (and +0.4 in between, which blending gives automatically).
+BISHOP_PAIR_BONUS = {"middlegame": 0.3, "endgame": 0.5}
+
+# Tapered evaluation, as in Fruit 2.1 (chessprogramming.org/Tapered_Eval).
+# Phase weights: 24 in total at the start of the game, falling as pieces come
+# off. Any value with a middlegame and an endgame version is blended by how far
+# the game has moved towards the endgame, instead of switching at a cutoff.
+PHASE_WEIGHTS = {"knight": 1, "bishop": 1, "rook": 2, "queen": 4}
+TOTAL_PHASE = 24
+
+
+def endgame_weight(board, pieces=None):
+    # 0.0 with all pieces on the board, rising to 1.0 when only kings and
+    # pawns are left.
+    if pieces is None:
+        pieces = piece_coverage(board.grid)
+    remaining = 0
+    for _, _, _, kind, _ in pieces:
+        remaining += PHASE_WEIGHTS.get(kind, 0)
+    return max(0, TOTAL_PHASE - remaining) / TOTAL_PHASE  # max() in case promotions add material
+
+
+def blend(middlegame_value, endgame_value, weight):
+    return middlegame_value + (endgame_value - middlegame_value) * weight
+
+
+def bishop_pair(board, weight=None):
+    if weight is None:
+        weight = endgame_weight(board)
+    white_bishops = 0
+    black_bishops = 0
+    for row in board.grid:
+        for piece in row:
+            if piece == "white_bishop":
+                white_bishops += 1
+            elif piece == "black_bishop":
+                black_bishops += 1
+
+    bonus = blend(BISHOP_PAIR_BONUS["middlegame"], BISHOP_PAIR_BONUS["endgame"], weight)
+
+    score = 0
+    if white_bishops >= 2:
+        score += bonus
+    if black_bishops >= 2:
+        score -= bonus
+    return score
+
+
+# King safety is scaled by the opponent's material, as chessprogramming.org/
+# King_Safety describes (TSCP does this), so it matters most while the enemy
+# still has attackers and fades as they come off.
+MAX_SIDE_PHASE = 12  # one side's PHASE_WEIGHTS at the start: 2N + 2B + 2R + Q
+
+
+def side_phase(pieces, colour):
+    total = 0
+    for _, _, piece_colour, kind, _ in pieces:
+        if piece_colour == colour:
+            total += PHASE_WEIGHTS.get(kind, 0)
+    return total
+
+
+# Pawn shelter, from Fruit 2.1 (eval.cpp shelter_file / shelter_square). On the
+# king's file (counted twice) and the files either side, find the nearest own
+# pawn in front of the king: penalty = 36 - dist * dist centipawns, where dist
+# is 6 for a pawn on its starting square (0), 5 one step up (11), 4 two steps
+# up (20), and 0 when there's no pawn in front at all (36).
+def shelter_file_penalty(grid, col, king_row, colour):
+    if colour == "white":
+        rows_in_front = range(king_row, -1, -1)
+    else:
+        rows_in_front = range(king_row, 8)
+
+    dist = 0
+    for row in rows_in_front:
+        if grid[row][col] == f"{colour}_pawn":
+            if colour == "white":
+                dist = row
+            else:
+                dist = 7 - row
+            break
+    return 36 - dist * dist
+
+
+def shelter_penalty(grid, king, colour):
+    row, col = king
+    penalty = 2 * shelter_file_penalty(grid, col, row, colour)
+    for side_col in (col - 1, col + 1):
+        if 0 <= side_col <= 7:
+            penalty += shelter_file_penalty(grid, side_col, row, colour)
+    return penalty / 100
+
+
+def king_pawn_shield(board, pieces=None):
+    grid = board.grid
+    if pieces is None:
+        pieces = piece_coverage(grid)
+    white = shelter_penalty(grid, board.white_king, "white") * side_phase(pieces, "black") / MAX_SIDE_PHASE
+    black = shelter_penalty(grid, board.black_king, "black") * side_phase(pieces, "white") / MAX_SIDE_PHASE
+    return black - white
+
+
+# King attack, from Fruit 2.1 (eval.cpp): every enemy piece aimed at the zone
+# around your king adds its unit (knight 1, bishop 1, rook 2, queen 4). The
+# total is multiplied by KingAttackOpening (20 centipawns) and a weight out of
+# 256 that grows with the NUMBER of attackers -- one attacker alone counts 0.
+# It's a middlegame-only value in Fruit, so it fades out by endgame_weight.
+KING_ATTACK_UNIT = {"knight": 1, "bishop": 1, "rook": 2, "queen": 4}
+KING_ATTACK_OPENING = 20
+KING_ATTACK_WEIGHT = [0, 0, 128, 192, 224, 240, 248, 252, 254, 255, 256, 256, 256, 256, 256, 256]
+
+
+def king_zone(king):
+    row, col = king
+    return {(row + dr, col + dc)
+            for dr in (-1, 0, 1) for dc in (-1, 0, 1)
+            if 0 <= row + dr <= 7 and 0 <= col + dc <= 7}
+
+
+def king_attackers(board, weight=None, pieces=None):
+    if weight is None:
+        weight = endgame_weight(board)
+    grid = board.grid
+    if pieces is None:
+        pieces = piece_coverage(grid)
+
+    zones = {"white": king_zone(board.white_king), "black": king_zone(board.black_king)}
+    units = {"white": 0, "black": 0}      # attack units aimed at the other side's king
+    attackers = {"white": 0, "black": 0}  # number of pieces aimed at the other side's king
+
+    for _, _, colour, kind, covered in pieces:
+        if kind not in KING_ATTACK_UNIT:
+            continue
+        if colour == "white":
+            enemy = "black"
+        else:
+            enemy = "white"
+        if zones[enemy].intersection(moves_from(covered, grid, colour)):
+            units[colour] += KING_ATTACK_UNIT[kind]
+            attackers[colour] += 1
+
+    score = 0
+    for colour in ("white", "black"):
+        count = min(attackers[colour], len(KING_ATTACK_WEIGHT) - 1)
+        attack = units[colour] * KING_ATTACK_OPENING * KING_ATTACK_WEIGHT[count] / 256 / 100
+        attack = attack * (1 - weight)
+        if colour == "white":
+            score += attack
+        else:
+            score -= attack
+    return score
+
+
+SLIDE_DIRECTIONS = {
+    "bishop": DIAGONAL_DIRECTIONS,
+    "rook": STRAIGHT_DIRECTIONS,
+    "queen": DIAGONAL_DIRECTIONS + STRAIGHT_DIRECTIONS,
+}
+
+
+def squares_covered_by(grid, r, c, colour, kind):
+    # Squares one piece attacks, INCLUDING squares holding its own side's
+    # pieces (i.e. what it defends). Sliding pieces stop at the first piece.
+    if kind == "pawn":
+        return pawn_attack_squares(r, c, colour)
+
+    covered = []
+    if kind in ("knight", "king"):
+        if kind == "knight":
+            steps = KNIGHT_JUMPS
+        else:
+            steps = KING_STEPS
+        for dr, dc in steps:
+            if 0 <= r + dr <= 7 and 0 <= c + dc <= 7:
+                covered.append((r + dr, c + dc))
+    else:
+        for dr, dc in SLIDE_DIRECTIONS[kind]:
+            nr, nc = r + dr, c + dc
+            while 0 <= nr <= 7 and 0 <= nc <= 7:
+                covered.append((nr, nc))
+                if grid[nr][nc] is not None:
+                    break
+                nr, nc = nr + dr, nc + dc
+    return covered
+
+
+def piece_coverage(grid):
+    # Every piece on the board, with the squares it attacks or defends:
+    # (row, col, colour, kind, covered). evaluate() builds this once per
+    # position and shares it with the heuristics that need it.
+    pieces = []
+    for r in range(8):
+        for c in range(8):
+            piece = grid[r][c]
+            if piece is not None:
+                colour, kind = piece.split("_")
+                pieces.append((r, c, colour, kind, squares_covered_by(grid, r, c, colour, kind)))
+    return pieces
+
+
+# Mop-up evaluation, from Chess 4.x (Slate & Atkin, 1977) via
+# chessprogramming.org/Mop-up_Evaluation:
+#   4.7 * losing king's distance from the centre + 1.6 * (14 - distance between kings)
+# The source gives no units. Tested at /100 and /10 on 80 K+R/K+Q vs K games:
+# /100 was too weak to pull the winning king away from the centre (the endgame
+# king table outweighed it), so K+Q vs K mated only 14/40; /10 mated 78/80.
+# The same page says mop-up is for when one side has "likely a rook or queen
+# (or even two different colored bishops)": a rook's worth (5) covers all three.
+MOPUP_MIN_ADVANTAGE = 5
+
+
+def centre_distance(row, col):
+    # 0 on the four centre squares, up to 6 in a corner.
+    return max(3 - row, row - 4) + max(3 - col, col - 4)
+
+
+def mop_up(board):
+    white_material = 0
+    black_material = 0
+    for row in board.grid:
+        for piece in row:
+            if piece is None:
+                continue
+            colour, kind = piece.split("_")
+            if kind == "pawn":
+                return 0  # only for pawnless endgames
+            if kind == "king":
+                continue
+            if colour == "white":
+                white_material += PIECE_VALUES[kind]
+            else:
+                black_material += PIECE_VALUES[kind]
+
+    if white_material - black_material >= MOPUP_MIN_ADVANTAGE:
+        winning_king, losing_king, sign = board.white_king, board.black_king, 1
+    elif black_material - white_material >= MOPUP_MIN_ADVANTAGE:
+        winning_king, losing_king, sign = board.black_king, board.white_king, -1
+    else:
+        return 0
+
+    king_distance = abs(winning_king[0] - losing_king[0]) + abs(winning_king[1] - losing_king[1])
+    value = 4.7 * centre_distance(*losing_king) + 1.6 * (14 - king_distance)
+    return sign * value / 10
+
+
+# Move ordering (chessprogramming.org/Move_Ordering): alpha-beta stops
+# searching a position as soon as one move is good enough, so the sooner the
+# best move is tried, the fewer positions get searched.
+
+# Killer moves (chessprogramming.org/Killer_Heuristic): quiet moves that caused
+# a cutoff, kept per ply (len(board.history)). A move that refuted one line is
+# often good in the lines next to it too. Emptied at the start of every
+# choose_move.
+killer_moves = {}
+KILLER_VALUE = 0.5  # after every capture (the cheapest scores 0.9), before quiet moves (0)
+
+
+def remember_killer(ply, move):
+    killers = killer_moves.get(ply, [])
+    if move not in killers:
+        killer_moves[ply] = [move] + killers[:1]  # keep the 2 most recent
+
+
+def order_moves(board, moves, killers=(), best_move=None):
+    # Try first:
+    #   1. best_move: the best move the transposition table has for this position
+    #   2. captures, most valuable victim first and, for equal victims, the
+    #      cheapest attacker first (MVV-LVA), and promotions (worth a queen)
+    #   3. killer moves
+    #   4. every other move
+    # On a tie, choose_move keeps the first move it found, so promotions
+    # coming early also makes it promote now rather than later.
+    def move_value(move):
+        if move == best_move:
+            return 1000
+        from_sq, to_sq = move
+        moving = board.get_piece(*from_sq)
+        value = 0
+
+        target = board.get_piece(*to_sq)
+        if target is not None:
+            # The attacker is divided by 1000 so even the king (100) only
+            # breaks ties between equal victims, never outweighs a pawn (1).
+            value += PIECE_VALUES[target.split("_")[1]] - PIECE_VALUES[moving.split("_")[1]] / 1000
+
+        if moving.endswith("pawn") and to_sq[0] in (0, 7):
+            value += PIECE_VALUES["queen"]
+
+        if value == 0 and move in killers:
+            value = KILLER_VALUE
+        return value
+
+    return sorted(moves, key=move_value, reverse=True)
+
+
+# Transposition table (chessprogramming.org/Transposition_Table): the result of
+# every position searched, so when the same position comes up again through a
+# different move order, it isn't searched again. Keyed by hash() of the
+# position key (one 64-bit number instead of the whole board) to keep it small.
+# Each entry is (depth, score, flag, best move). The flag says what the score
+# is, because alpha-beta often stops early and only learns a bound:
+EXACT = 0        # the real score
+LOWER_BOUND = 1  # a move reached beta, so the real score is at least this
+UPPER_BOUND = 2  # no move beat alpha, so the real score is at most this
+transposition_table = {}  # kept between moves in a game when choose_move is asked to (see AI)
+MAX_TABLE_SIZE = 500000   # entries: past this it's emptied, so memory can't keep growing
+
+
+def remember_position(key, depth, score, flag, best_move):
+    # Keep the deeper search if the position was already stored.
+    entry = transposition_table.get(key)
+    if entry is None or depth >= entry[0]:
+        transposition_table[key] = (depth, score, flag, best_move)
+
+
+def save_state(board):
+    grid_copy = []
+    for row in board.grid:
+        grid_copy.append(row[:])
+
+    return {
+        "grid": grid_copy,
+        "turn": board.turn,
+        "en_passant_ts": board.en_passant_ts,
+        "white_king": board.white_king,
+        "black_king": board.black_king,
+        "white_king_moved": board.white_king_moved,
+        "white_rook_kingside_moved": board.white_rook_kingside_moved,
+        "white_rook_queenside_moved": board.white_rook_queenside_moved,
+        "black_king_moved": board.black_king_moved,
+        "black_rook_kingside_moved": board.black_rook_kingside_moved,
+        "black_rook_queenside_moved": board.black_rook_queenside_moved,
+        "halfmove_clock": board.halfmove_clock,
+        "history_len": len(board.history),
+    }
+
+
+def restore_state(board, state):
+    board.grid = state["grid"]
+    board.turn = state["turn"]
+    board.en_passant_ts = state["en_passant_ts"]
+    board.white_king = state["white_king"]
+    board.black_king = state["black_king"]
+    board.white_king_moved = state["white_king_moved"]
+    board.white_rook_kingside_moved = state["white_rook_kingside_moved"]
+    board.white_rook_queenside_moved = state["white_rook_queenside_moved"]
+    board.black_king_moved = state["black_king_moved"]
+    board.black_rook_kingside_moved = state["black_rook_kingside_moved"]
+    board.black_rook_queenside_moved = state["black_rook_queenside_moved"]
+    board.halfmove_clock = state["halfmove_clock"]
+    # Undo the positions move_piece added to the history since save_state.
+    while len(board.history) > state["history_len"]:
+        key = board.history.pop()
+        board.position_counts[key] -= 1
+        # a count of 0 means it never happened: remove it so the dict doesn't keep growing
+        if board.position_counts[key] == 0:
+            del board.position_counts[key]
+
+
+def clone_board(board):
+    copy = Board()
+    restore_state(copy, save_state(board))
+    copy.history = list(board.history)
+    copy.position_counts = dict(board.position_counts)
+    return copy
+
+
+def is_draw_in_search(board):
+    # Stricter than the real rules on purpose: a position that has occurred
+    # even once before is scored as a draw, so the search sees repetition
+    # coming within a few plies instead of waiting for a third occurrence.
+    if board.position_counts[board.history[-1]] >= 2:
+        return True
+    if board.halfmove_clock >= 100:
+        return True
+    return insufficient_material(board.grid)
+
+
+def make_move(board, from_sq, to_sq):
+    board.move_piece(from_sq, to_sq)
+    row, col = to_sq
+    piece = board.grid[row][col]
+    if piece.endswith("pawn") and row in (0, 7):
+        board.grid[row][col] = piece.split("_")[0] + "_queen"
+
+
+def is_capture_or_promotion(board, move):
+    from_sq, to_sq = move
+    moving = board.grid[from_sq[0]][from_sq[1]]
+    if board.grid[to_sq[0]][to_sq[1]] is not None:
+        return True
+    if moving.endswith("pawn"):
+        if from_sq[1] != to_sq[1]:
+            return True  # en passant: a pawn moving sideways onto an empty square
+        if to_sq[0] in (0, 7):
+            return True
+    return False
+
+
+def get_legal_captures(board, piece_moves):
+    # like get_all_legal_moves, but only checks if captures and promotions
+    # are legal, the only moves quiescence search plays
+    captures = []
+    if board.turn == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
+
+    for row in range(8):
+        for col in range(8):
+            piece = board.grid[row][col]
+            if piece is not None and piece.startswith(board.turn):
+                kind = piece.split("_")[1]
+                if kind == "king":
+                    targets = piece_moves[kind](row, col, board.grid, board.turn, board)
+                elif kind == "pawn":
+                    targets = piece_moves[kind](row, col, board.grid, board.turn, board.en_passant_ts)
+                else:
+                    targets = piece_moves[kind](row, col, board.grid, board.turn)
+
+                for target in targets:
+                    move = ((row, col), target)
+                    if is_capture_or_promotion(board, move):
+                        if is_legal_move(board.grid, board.turn, (row, col), target, king_pos):
+                            captures.append(move)
+    return captures
+
+
+# delta pruning (chessprogramming.org/Delta_Pruning): skip a capture that
+# can't raise alpha even if it wins the piece plus a safety margin of 200
+# centipawns. it's turned off in the late endgame, where one pawn can decide
+# the game: here, once a quarter or less of the 24 phase points are left
+DELTA_MARGIN = 2
+LATE_ENDGAME_PHASE = 6
+
+
+def game_phase(board):
+    # phase points left: 24 at the start, 0 with only kings and pawns
+    remaining = 0
+    for row in board.grid:
+        for piece in row:
+            if piece is not None:
+                remaining += PHASE_WEIGHTS.get(piece.split("_")[1], 0)
+    return remaining
+
+
+def has_legal_move(board, piece_moves):
+    # stops at the first legal move it finds
+    for row in range(8):
+        for col in range(8):
+            piece = board.grid[row][col]
+            if piece is not None and piece.startswith(board.turn):
+                _, legal_moves = select_piece((row, col), piece, board, piece_moves)
+                if len(legal_moves) > 0:
+                    return True
+    return False
+
+
+# Quiescence search (chessprogramming.org/Quiescence_Search): at the end of the
+# normal search, keep playing captures (and promotions) until the position is
+# quiet, and only score it then. Without it, the engine scores positions in the
+# middle of a trade, e.g. right after its queen takes a defended pawn, before
+# the recapture (the horizon effect!!!).
+def quiescence(board, piece_moves, alpha, beta):
+    check_time()
+    if is_draw_in_search(board):
+        return 0
+
+    if board.turn == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
+    checked = in_check(board.grid, board.turn, king_pos)
+
+    if checked:
+        # in check: every move that gets out of it
+        search_moves = get_all_legal_moves(board, piece_moves)
+
+        # checkmate
+        if len(search_moves) == 0:
+            return -CHECKMATE_SCORE
+    else:
+        # stand pat: not capturing is allowed
+        if board.turn == "white":
+            stand_pat = evaluate(board)
+        else:
+            stand_pat = -evaluate(board)
+        if stand_pat >= beta:
+            return beta
+        if stand_pat > alpha:
+            alpha = stand_pat
+
+        search_moves = get_legal_captures(board, piece_moves)
+
+        # stalemate: no captures and no other moves either
+        if len(search_moves) == 0 and not has_legal_move(board, piece_moves):
+            return 0
+
+    delta_pruning = False
+    if not checked and len(search_moves) > 0:
+        delta_pruning = game_phase(board) > LATE_ENDGAME_PHASE
+
+    for (from_sq, to_sq) in order_moves(board, search_moves):
+        # delta pruning: even winning this piece can't raise alpha
+        if delta_pruning:
+            moving = board.grid[from_sq[0]][from_sq[1]]
+            target = board.grid[to_sq[0]][to_sq[1]]
+            promotion = moving.endswith("pawn") and to_sq[0] in (0, 7)
+            if target is None:
+                gain = PIECE_VALUES["pawn"]  # en passant
+            else:
+                gain = PIECE_VALUES[target.split("_")[1]]
+            if not promotion and stand_pat + gain + DELTA_MARGIN < alpha:
+                continue
+
+        state = save_state(board)
+        make_move(board, from_sq, to_sq)
+        score = -quiescence(board, piece_moves, -beta, -alpha)
+        restore_state(board, state)
+
+        if score >= beta:
+            return beta
+        if score > alpha:
+            alpha = score
+    return alpha
+
+
+# check extension limit, set by choose_move: a long chain of checks
+# can't make the search go on forever
+max_search_ply = 0
+
+# time limit, set by choose_move: when to stop searching (None = no limit)
+search_deadline = None
+
+
+class SearchTimeout(Exception):
+    pass
+
+
+def check_time():
+    # out of time: stop the search straight away
+    if search_deadline is not None and time.perf_counter() > search_deadline:
+        raise SearchTimeout
+
+
+# PVS (chessprogramming.org/Principal_Variation_Search): the first move gets a
+# full search and sets the base. every other move only gets a yes/no check,
+# "does it beat the base?", using a window this narrow (in pawns). only a yes
+# gets searched again fully
+# fully searches one move and sets as base.
+# checks second move.
+# checks oponents responses.
+# If any of those responses > than base continue
+# If any of those responses < base skip.
+#  - because there is an option for outcome < base the oponent would force this path so pick base move.
+# If all responses > base == high fail --> re-search the second move.
+PVS_WINDOW = 0.001
+
+
+# late move reductions (chessprogramming.org/Late_Move_Reductions): moves late
+# in the list are rarely the best, so quiet ones get searched 1 shallower
+# first. only if that still beats alpha do they get the normal search.
+# the usual setup: not the first few moves, not captures, promotions or
+# checks, not when in check, and only with enough depth left
+LMR_FULL_MOVES = 3
+LMR_MIN_DEPTH = 3
+LMR_REDUCTION = 1
+
+
+def search_child(board, piece_moves, depth, alpha, beta, first_move, reduce=False):
+    # the move has already been made on the board
+    if first_move:
+        return -negamax(board, piece_moves, depth, -beta, -alpha)
+
+    # late move reduction: try it shallower first
+    if reduce:
+        score = -negamax(board, piece_moves, depth - LMR_REDUCTION, -alpha - PVS_WINDOW, -alpha)
+
+        # still doesn't beat alpha: no need for the normal search
+        if score <= alpha:
+            return score
+
+    # yes/no check: does it beat alpha?
+    score = -negamax(board, piece_moves, depth, -alpha - PVS_WINDOW, -alpha)
+
+    # yes: search it again fully for its real score
+    if alpha < score < beta:
+        score = -negamax(board, piece_moves, depth, -beta, -alpha)
+    return score
+
+
+def negamax(board, piece_moves, depth, alpha, beta):
+    check_time()
+    # Checked before the transposition table: whether a position is a
+    # repetition depends on how it was reached, which the table doesn't know.
+    if is_draw_in_search(board):
+        return 0
+
+    if board.turn == "white":
+        king_pos = board.white_king
+    else:
+        king_pos = board.black_king
+    checked = in_check(board.grid, board.turn, king_pos)
+
+    # check extension: in check, search 1 move deeper
+    if checked and len(board.history) < max_search_ply:
+        depth += 1
+
+    key = hash(board.history[-1])
+    entry = transposition_table.get(key)
+    best_move = None
+    if entry is not None:
+        entry_depth, entry_score, entry_flag, best_move = entry
+        # Only trust a score from a search at least this deep.
+        if entry_depth >= depth:
+            if entry_flag == EXACT:
+                return entry_score
+            if entry_flag == LOWER_BOUND and entry_score >= beta:
+                return beta
+            if entry_flag == UPPER_BOUND and entry_score <= alpha:
+                return alpha
+
+    if depth == 0:
+        return quiescence(board, piece_moves, alpha, beta)
+
+    moves = get_all_legal_moves(board, piece_moves)
+
+    # checkmate or stalemate
+    if len(moves) == 0:
+        if checked:
+            return -CHECKMATE_SCORE
+        return 0
+
+    ply = len(board.history)
+    killers = killer_moves.get(ply, [])
+    best_move_here = None
+    first_move = True
+    move_number = 0
+    for (from_sq, to_sq) in order_moves(board, moves, killers, best_move):
+        move_number += 1
+        quiet = board.grid[to_sq[0]][to_sq[1]] is None
+        capture_or_promotion = is_capture_or_promotion(board, (from_sq, to_sq))
+        state = save_state(board)
+        make_move(board, from_sq, to_sq)
+
+        # late move reduction: a quiet move late in the list
+        reduce = False
+        if (depth >= LMR_MIN_DEPTH and move_number > LMR_FULL_MOVES and not checked
+                and not capture_or_promotion and (from_sq, to_sq) not in killers):
+            # not a move that gives check
+            if board.turn == "white":
+                opponent_king = board.white_king
+            else:
+                opponent_king = board.black_king
+            if not in_check(board.grid, board.turn, opponent_king):
+                reduce = True
+
+        score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move, reduce)
+        first_move = False
+        restore_state(board, state)
+
+        if score >= beta:
+            if quiet:
+                remember_killer(ply, (from_sq, to_sq))
+            remember_position(key, depth, beta, LOWER_BOUND, (from_sq, to_sq))
+            return beta
+        if score > alpha:
+            alpha = score
+            best_move_here = (from_sq, to_sq)
+
+    if best_move_here is None:
+        remember_position(key, depth, alpha, UPPER_BOUND, best_move)
+    else:
+        remember_position(key, depth, alpha, EXACT, best_move_here)
+    return alpha
 
 
 class AI:
-    def choose_move(self, board):
-        pass
+    def new_game(self):
+        # nothing from the last game carries over
+        killer_moves.clear()
+        transposition_table.clear()
+
+    def choose_move(self, board, piece_moves, depth, time_limit=None, keep_table=False):
+        # keep_table: keep the transposition table from earlier moves in this
+        # game, so positions already worked out aren't searched again (the UCI
+        # engine does this). Left off, the table starts empty every move, which
+        # test matches need when two engines with different heuristics take
+        # turns in the same program.
+        killer_moves.clear()
+        if not keep_table or len(transposition_table) > MAX_TABLE_SIZE:
+            transposition_table.clear()
+        moves = get_all_legal_moves(board, piece_moves)
+
+        # checks can extend a line to at most twice the depth
+        global max_search_ply
+        max_search_ply = len(board.history) + 2 * depth
+
+        # time limit in seconds, None = search the full depth however long it takes
+        global search_deadline
+        if time_limit is None:
+            search_deadline = None
+        else:
+            search_deadline = time.perf_counter() + time_limit
+
+        # Iterative deepening (chessprogramming.org/Iterative_Deepening): search
+        # depth 1, then 2, ... up to depth. Each search leaves its best moves in
+        # the transposition table (and killer moves), so the next, deeper one
+        # tries the best move first almost everywhere and cuts off much more.
+        best_move = None
+        for current_depth in range(1, depth + 1):
+            depth_best, finished = self.search_root(board, piece_moves, moves, current_depth, best_move)
+            if depth_best is not None:
+                best_move = depth_best
+
+            # out of time: play the best move found so far
+            if not finished:
+                break
+
+        search_deadline = None
+
+        # ran out of time before even 1 move was searched
+        if best_move is None and len(moves) > 0:
+            best_move = moves[0]
+        return best_move
+
+    def search_root(self, board, piece_moves, moves, depth, previous_best):
+        # returns the best move, and whether the whole depth got searched
+        alpha = -float('inf')
+        beta = float('inf')
+        best_move = None
+        first_move = True
+        for (from_sq, to_sq) in order_moves(board, moves, best_move=previous_best):
+            state = save_state(board)
+            make_move(board, from_sq, to_sq)
+            try:
+                score = search_child(board, piece_moves, depth - 1, alpha, beta, first_move)
+                first_move = False
+            except SearchTimeout:
+                # out of time partway through this move: put the board back.
+                # the moves before it were searched fully, and the previous
+                # best move always goes first, so best_move is still good
+                restore_state(board, state)
+                return best_move, False
+            restore_state(board, state)
+            if score > alpha:
+                alpha = score
+                best_move = (from_sq, to_sq)
+        return best_move, True
+
+

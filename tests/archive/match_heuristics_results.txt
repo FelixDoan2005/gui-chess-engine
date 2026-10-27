@@ -1,0 +1,46 @@
+Finished 600 games in 33.7 min  (tests/match_mobility.py)
+Score = wins + half of draws, for engine A. 50% = no difference.
+m = mobility. Piece-square tables always on.
+
+=== m  vs  none ===
+  depth 2:  51 W / 107 D /  42 L   score  52.2%
+  depth 3:  42 W / 120 D /  38 L   score  51.0%
+  depth 4:  33 W / 146 D /  21 L   score  53.0%
+
+
+Finished 2400 games in 176.1 min  (tests/match_heuristics.py)
+Score = wins + half of draws, for engine A. 50% = no difference.
+ps = pawn structure, m = mobility. Piece-square tables always on.
+
+=== ps  vs  none ===
+  depth 2:  46 W / 113 D /  41 L   score  51.2%
+  depth 3:  40 W / 121 D /  39 L   score  50.2%
+  depth 4:  30 W / 135 D /  35 L   score  48.8%
+
+=== m + ps  vs  none ===
+  depth 2:  56 W /  86 D /  58 L   score  49.5%
+  depth 3:  44 W / 113 D /  43 L   score  50.2%
+  depth 4:  41 W / 136 D /  23 L   score  54.5%
+
+=== m + ps  vs  m ===
+  depth 2:  56 W /  87 D /  57 L   score  49.8%
+  depth 3:  30 W / 122 D /  48 L   score  45.5%
+  depth 4:  22 W / 139 D /  39 L   score  45.8%
+
+=== ps  vs  m ===
+  depth 2:  45 W /  97 D /  58 L   score  46.8%
+  depth 3:  40 W / 116 D /  44 L   score  49.0%
+  depth 4:  25 W / 129 D /  46 L   score  44.8%
+
+
+===== SUMMARY (engine A score) =====
+matchup                 depth 2    depth 3    depth 4  
+ps vs none                51.2%      50.2%      48.8%  
+m + ps vs none            49.5%      50.2%      54.5%  
+m + ps vs m               49.8%      45.5%      45.8%  
+ps vs m                   46.8%      49.0%      44.8%
+m vs none                 52.2%      51.0%      53.0%
+
+comments:
+The pawn_structure heurstic actually hurt the mobility
+

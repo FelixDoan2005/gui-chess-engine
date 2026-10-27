@@ -1,0 +1,30 @@
+Texel tuning on 187,319 self-play positions (168,588 training, 18,731 held back), K = 0.791
+  error, training:  0.125472 -> 0.123778
+  error, held back: 0.126468 -> 0.124497   (should drop too, or it's overfitting)
+
+  number                                     before    after
+  PIECE_VALUES[knight]                        3.000    3.000
+  PIECE_VALUES[bishop]                        3.000    2.962
+  PIECE_VALUES[rook]                          5.000    4.688
+  PIECE_VALUES[queen]                         9.000   10.237
+  MOBILITY_WEIGHTS[knight]                    0.040    0.057
+  MOBILITY_WEIGHTS[bishop]                    0.050    0.098
+  MOBILITY_WEIGHTS[rook]                      0.020    0.060
+  MOBILITY_WEIGHTS[queen]                     0.010    0.023
+  MOBILITY_WEIGHTS_ENDGAME[knight]            0.040    0.025
+  MOBILITY_WEIGHTS_ENDGAME[bishop]            0.050    0.056
+  MOBILITY_WEIGHTS_ENDGAME[rook]              0.040    0.120
+  MOBILITY_WEIGHTS_ENDGAME[queen]             0.020    0.060
+  DOUBLED_PAWN_PENALTY[middlegame]            0.100    0.010
+  DOUBLED_PAWN_PENALTY[endgame]               0.200    0.323
+  ISOLATED_PAWN_PENALTY[middlegame]           0.100    0.001
+  ISOLATED_PAWN_PENALTY[endgame]              0.200    0.002
+  ISOLATED_OPEN_PAWN_PENALTY[middlegame]      0.200    0.170
+  ISOLATED_OPEN_PAWN_PENALTY[endgame]         0.200    0.035
+  PASSED_PAWN_MIN[middlegame]                 0.100    0.001
+  PASSED_PAWN_MIN[endgame]                    0.200    0.268
+  PASSED_PAWN_MAX[middlegame]                 0.700    0.569
+  PASSED_PAWN_MAX[endgame]                    1.400    2.222
+  BISHOP_PAIR_BONUS[middlegame]               0.300    0.004
+  BISHOP_PAIR_BONUS[endgame]                  0.500    0.906
+  KING_ATTACK_OPENING                        20.000   40.250

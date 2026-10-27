@@ -1,0 +1,41 @@
+Full engine (all 13 heuristics) vs the same engine without one of them.
+Score = wins + half the draws, for the full engine. Elo above 0 = the heuristic makes it stronger.
+helps = whole 95% range above 0, hurts = whole range below 0, no clear effect = range includes 0.
+
+DEPTH 2   (500 games per match)
+  heuristic               W /   D /   L    score    Elo   95% range       verdict
+  ALL 13 vs none        473 /  13 /  14    95.9%   +548   [+489, +633]    helps
+  ---------------------------------------------------------------------------------------
+  king_endgame_table    255 /  63 / 182    57.3%    +51   [+28, +74]      helps
+  pawn_structure        249 /  61 / 190    55.9%    +41   [+14, +69]      helps
+  mobility              243 /  65 / 192    55.1%    +36   [+9, +62]       helps
+  king_pawn_shield      244 /  61 / 195    54.9%    +34   [+7, +62]       helps
+  bishop_pair           226 /  78 / 196    53.0%    +21   [-3, +45]       no clear effect
+  piece_square_tables   234 /  56 / 210    52.4%    +17   [-11, +45]      no clear effect
+  king_attackers        217 /  82 / 201    51.6%    +11   [-12, +34]      no clear effect
+  hanging_pieces        219 /  72 / 209    51.0%     +7   [-20, +34]      no clear effect
+  knight_outposts       215 /  79 / 206    50.9%     +6   [-3, +16]       no clear effect
+  mop_up                213 /  77 / 210    50.3%     +2   [-1, +5]        no clear effect
+  bishop_pawn_pairs     210 /  75 / 215    49.5%     -3   [-14, +7]       no clear effect
+  rook_open_files       209 /  69 / 222    48.7%     -9   [-34, +15]      no clear effect
+  centre_control        188 /  66 / 246    44.2%    -40   [-69, -13]      hurts
+  Games ended by: checkmate 87%, threefold repetition 8%, insufficient material 2%, 50-move rule 2%, stalemate 0%
+
+DEPTH 3   (200 games per match)
+  heuristic               W /   D /   L    score    Elo   95% range       verdict
+  ALL 13 vs none        196 /   4 /   0    99.0%   +798   [+680, +1200]   helps
+  ---------------------------------------------------------------------------------------
+  king_endgame_table    114 /  22 /  64    62.5%    +89   [+54, +125]     helps
+  piece_square_tables   106 /  25 /  69    59.2%    +65   [+16, +117]     helps
+  pawn_structure         97 /  24 /  79    54.5%    +31   [-13, +76]      no clear effect
+  mobility               91 /  30 /  79    53.0%    +21   [-25, +67]      no clear effect
+  king_pawn_shield       94 /  21 /  85    52.2%    +16   [-26, +58]      no clear effect
+  bishop_pawn_pairs      89 /  25 /  86    50.7%     +5   [-18, +29]      no clear effect
+  mop_up                 86 /  28 /  86    50.0%     +0   [+0, +0]        no clear effect
+  hanging_pieces         87 /  26 /  87    50.0%     +0   [-49, +49]      no clear effect
+  bishop_pair            84 /  30 /  86    49.5%     -3   [-45, +38]      no clear effect
+  king_attackers         88 /  18 /  94    48.5%    -10   [-52, +31]      no clear effect
+  rook_open_files        81 /  31 /  88    48.2%    -12   [-54, +29]      no clear effect
+  knight_outposts        79 /  33 /  88    47.8%    -16   [-38, +6]       no clear effect
+  centre_control         75 /  22 / 103    43.0%    -49   [-93, -6]       hurts
+  Games ended by: checkmate 88%, threefold repetition 8%, insufficient material 3%, 50-move rule 2%, stalemate 0%
