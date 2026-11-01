@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Felis</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; }
+    #board { width: 480px; margin: 20px auto; }
+  </style>
+</head>
+<body>
+  <h1>Felis</h1>
+  <div id="board"></div>
+  <p id="status">Your move (you are White)</p>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script>
+    const PIECE_NAMES = {P: "pawn", N: "knight", B: "bishop", R: "rook", Q: "queen", K: "king"};
+
+    const game = new Chess();
+    const moves = [];
+    let thinking = false;
+    const status = document.getElementById("status");
+
+    // chessboard.js calls pieces "wP", "bK"...: use your own pictures, e.g. white_pawn.png
+    function pieceImage(piece) {
+      let colour = "black";
+      if (piece[0] === "w") {
+        colour = "white";
+      }
+      return "/pieces/" + colour + "_" + PIECE_NAMES[piece[1]] + ".png";
+    }
+
+    function onDragStart(source, piece) {
+      if (thinking || game.game_over() || piece[0] !== "w") {
+        return false;
+      }
+    }
+
+    function onDrop(source, target) {
+      const move = game.move({from: source, to: target, promotion: "q"});
+      if (move === null) {
+        return "snapback";
+      }
+      let uci = source + target;
+      if (move.promotion) {
+        uci += move.promotion;
+      }
+      moves.push(uci);
+      askFelis();
+    }
+
+    // redraw after castling, en passant or promotion
+    function onSnapEnd() {
+      board.position(game.fen());
+    }
+
+    async function askFelis() {
+      if (game.game_over()) {
+        status.textContent = gameOverText();
+        return;
+      }
+      thinking = true;
+      status.textContent = "Felis is thinking...";
+
+      const response = await fetch("/move", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({moves: moves, seconds: 1}),
+      });
+      const data = await response.json();
+
+      game.move({from: data.move.slice(0, 2), to: data.move.slice(2, 4), promotion: data.move[4]});
+      moves.push(data.move);
+      board.position(game.fen());
+      thinking = false;
+
+      if (game.game_over()) {
+        status.textContent = gameOverText();
+      } else {
+        status.textContent = "Your move";
+      }
+    }
+
+    function gameOverText() {
+      if (game.in_checkmate()) {
+        if (game.turn() === "w") {
+          return "Checkmate, Felis wins";
+        } else {
+          return "Checkmate, you win!";
+        }
+      }
+      return "Draw";
+    }
+
+    const board = Chessboard("board", {
+      position: "start",
+      draggable: true,
+      pieceTheme: pieceImage,
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd,
+    });
+  </script>
+</body>
+</html>
