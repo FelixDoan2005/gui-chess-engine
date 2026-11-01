@@ -6,9 +6,12 @@ That way the engine runs as its own program, on PyPy if it's installed (about
     python engine/uci.py        (or: pypy engine/uci.py)
 
 Understands: uci, isready, ucinewgame, position startpos [moves ...],
-go [depth n] [movetime ms] [wtime ms btime ms winc ms binc ms], quit
+go [depth n] [movetime ms] [wtime ms btime ms winc ms binc ms],
+setoption name OwnBook value true/false, quit
 """
+import json
 import os
+import random
 import shutil
 import sys
 
@@ -22,6 +25,7 @@ from ui.chess_logic import Board, piece_moves
 
 MAX_DEPTH = 20  # when there's only a time limit, the time decides
 PROMOTION_PIECES = {"q": "queen", "r": "rook", "b": "bishop", "n": "knight"}
+BOOK_PATH = os.path.join(ENGINE_DIR, "book.json")  # built by engine/build_book.py
 
 
 def engine_command():
@@ -117,6 +121,31 @@ def search_limits(words, board):
     return depth, time_limit
 
 
+def load_book():
+    # the opening book: {"moves so far": {"next move": count, ...}}, or {} if it's missing
+    if not os.path.exists(BOOK_PATH):
+        return {}
+    with open(BOOK_PATH) as f:
+        return json.load(f)["positions"]
+
+
+def book_move(book, words):
+    # a book move for the game in a "position startpos moves ..." command, picked
+    # at random, more common moves more often; None once the game leaves the book
+    moves_so_far = []
+    if "moves" in words:
+        moves_so_far = words[words.index("moves") + 1:]
+    options = book.get(" ".join(moves_so_far))
+    if options is None:
+        return None
+    moves = []
+    weights = []
+    for move, count in options.items():
+        moves.append(move)
+        weights.append(count)
+    return random.choices(moves, weights=weights)[0]
+
+
 def load_tuned_params():
     # tuned evaluation numbers, if the ENGINE_PARAMS setting points at a file
     # saved by the tuning (tests/tuning); otherwise the ones in engine/ai.py
@@ -131,6 +160,9 @@ def main():
     load_tuned_params()
     board = Board()
     ai = AI()
+    book = load_book()
+    use_book = True
+    position_words = ["position", "startpos"]
     while True:
         line = sys.stdin.readline()
         if line == "":
@@ -143,15 +175,27 @@ def main():
         if command == "uci":
             print("id name Felis")
             print("id author Felix Doan") # me hehe
+            print("option name OwnBook type check default true")
             print("uciok", flush=True)
         elif command == "isready":
             print("readyok", flush=True)
+        elif command == "setoption":
+            # setoption name OwnBook value false: the rating tests switch the book off
+            if "OwnBook" in words and "value" in words:
+                use_book = words[words.index("value") + 1].lower() == "true"
         elif command == "ucinewgame":
             board = Board()
             ai.new_game()
         elif command == "position":
             board = set_position(words)
+            position_words = words
         elif command == "go":
+            # still in the opening book: play a book move straight away
+            if use_book:
+                move = book_move(book, position_words)
+                if move is not None:
+                    print("bestmove " + move, flush=True)
+                    continue
             depth, time_limit = search_limits(words, board)
             # keep what earlier moves in this game worked out
             move = ai.choose_move(board, piece_moves, depth, time_limit=time_limit, keep_table=True)

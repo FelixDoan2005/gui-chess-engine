@@ -77,6 +77,8 @@ def play_game(task):
     stockfish = chess.engine.SimpleEngine.popen_uci(stockfish_path())
     stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": elo, "Threads": 1, "Hash": 16})
     engine = chess.engine.SimpleEngine.popen_uci(engine_command())
+    # no opening book, so ratings compare with the ones from before it existed
+    engine.configure({"OwnBook": False})
 
     board = Board()          # a copy of the engine's board, updated the way the GUI does it
     referee = chess.Board()  # python-chess's board

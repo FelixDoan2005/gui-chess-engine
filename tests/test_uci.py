@@ -14,14 +14,15 @@ import tempfile
 
 import engine.ai as ai
 from engine.tuning import get_params, set_params
-from engine.uci import play_uci_move, move_to_uci, set_position, search_limits, load_tuned_params
+from engine.uci import play_uci_move, move_to_uci, set_position, search_limits, load_tuned_params, load_book, book_move
 from ui.chess_logic import Board, piece_moves, get_all_legal_moves
 
 UCI_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "engine", "uci.py")
 
 
 def test_engine_answers_uci_commands():
-    commands = "uci\nisready\nposition startpos moves e2e4\ngo depth 2\nquit\n"
+    # book off, so it really searches
+    commands = "uci\nisready\nsetoption name OwnBook value false\nposition startpos moves e2e4\ngo depth 2\nquit\n"
     output = subprocess.run([sys.executable, UCI_PATH], input=commands, capture_output=True,
                             text=True, timeout=60).stdout
     lines = output.split("\n")
@@ -75,6 +76,43 @@ def test_engine_loads_tuned_numbers():
         del os.environ["ENGINE_PARAMS"]
         set_params(ai, start)
     assert ai.PIECE_VALUES["knight"] == 3
+
+
+def test_book_moves_are_legal():
+    # every book move, in every book position, is legal there
+    book = load_book()
+    assert len(book) > 1000
+    for key, options in book.items():
+        words = ["position", "startpos"]
+        if key != "":
+            words = ["position", "startpos", "moves"] + key.split()
+        board = set_position(words)
+        legal = []
+        for move in get_all_legal_moves(board, piece_moves):
+            legal.append(move_to_uci(board, move))
+        for move in options:
+            assert move in legal, f"{move} isn't legal after {key}"
+
+
+def test_book_move_and_leaving_the_book():
+    book = load_book()
+    assert book_move(book, ["position", "startpos"]) in book[""]
+    assert book_move(book, ["position", "startpos", "moves", "e2e4"]) in book["e2e4"]
+    # a game no named opening reaches: no book move, so the engine searches
+    assert book_move(book, ["position", "startpos", "moves", "h2h4", "a7a5", "h4h5", "a5a4"]) is None
+
+
+def test_engine_plays_book_move_instantly():
+    # with the book on, the reply to e4 comes from the book even at depth 1
+    commands = "uci\nisready\nposition startpos moves e2e4\ngo depth 1\nquit\n"
+    output = subprocess.run([sys.executable, UCI_PATH], input=commands, capture_output=True,
+                            text=True, timeout=60).stdout
+    assert "option name OwnBook type check default true" in output
+    best = ""
+    for line in output.split("\n"):
+        if line.startswith("bestmove"):
+            best = line.split()[1]
+    assert best in load_book()["e2e4"]
 
 
 def test_search_limits():
