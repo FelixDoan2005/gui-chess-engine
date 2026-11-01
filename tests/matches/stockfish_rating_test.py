@@ -16,9 +16,15 @@ board must match after each move.
 Needs: pip install chess, and Stockfish (stockfishchess.org): either on the
 PATH as "stockfish", or with the STOCKFISH_PATH setting pointing at it.
 
+Three ways to start the games (the 3rd command line argument):
+    random  random 4-move openings, opening book off (the default; the engine on its own)
+    start   the normal starting position, opening book off
+    book    the normal starting position, opening book on (how people play it)
+start vs book at the same time per move measures what the opening book adds.
+
 Run from the project root (or click Run in VS Code):
-    python tests/matches/stockfish_rating_test.py [seconds per move] [openings per level]
-    e.g. python tests/matches/stockfish_rating_test.py 5 25
+    python tests/matches/stockfish_rating_test.py [seconds per move] [openings per level] [random/start/book]
+    e.g. python tests/matches/stockfish_rating_test.py 5 25 book
 """
 import math
 import os
@@ -38,6 +44,11 @@ ELO_LEVELS = [1500, 1750, 2000, 2250]
 TIME_PER_MOVE = 1.0      # seconds, for both sides (or the 1st command line argument)
 OPENINGS_PER_LEVEL = 50  # each played twice (or the 2nd command line argument)
 MAX_PLIES = 500          # safety net; the draw rules end games well before this
+MODES = {
+    "random": "random openings, no opening book",
+    "start": "from the starting position, no opening book",
+    "book": "from the starting position, with the opening book",
+}
 
 FEN_LETTERS = {"pawn": "p", "knight": "n", "bishop": "b", "rook": "r", "queen": "q", "king": "k"}
 
@@ -73,12 +84,11 @@ def board_fen(board):
 
 
 def play_game(task):
-    elo, opening_index, our_colour, opening, time_per_move = task
+    elo, opening_index, our_colour, opening, time_per_move, use_book = task
     stockfish = chess.engine.SimpleEngine.popen_uci(stockfish_path())
     stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": elo, "Threads": 1, "Hash": 16})
     engine = chess.engine.SimpleEngine.popen_uci(engine_command())
-    # no opening book, so ratings compare with the ones from before it existed
-    engine.configure({"OwnBook": False})
+    engine.configure({"OwnBook": use_book})
 
     board = Board()          # a copy of the engine's board, updated the way the GUI does it
     referee = chess.Board()  # python-chess's board
@@ -177,10 +187,10 @@ def points_spread(games):
     return math.sqrt(variance)
 
 
-def report_lines(games, time_per_move, minutes):
+def report_lines(games, time_per_move, minutes, mode="random"):
     lines = [
         f"Engine (on {os.path.basename(engine_command()[0])}{tuned_note()}) vs Stockfish capped to set Elo levels, "
-        f"{time_per_move:g}s per move each, {len(games)} games in {minutes:.0f} min",
+        f"{time_per_move:g}s per move each, {len(games)} games in {minutes:.0f} min, {MODES[mode]}",
         "",
         f"  {'Stockfish Elo':>13}   {'W /  D /  L':>11}   {'score':>6}   rating it implies on its own",
     ]
@@ -234,23 +244,38 @@ def run():
         time_per_move = float(sys.argv[1])
     if len(sys.argv) > 2:
         openings_per_level = int(sys.argv[2])
+    mode = "random"
+    if len(sys.argv) > 3:
+        mode = sys.argv[3]
+    if mode not in MODES:
+        sys.exit(f"The 3rd argument must be one of: {', '.join(MODES)}")
     # with tuned numbers (the ENGINE_PARAMS setting, see engine/uci.py), keep the results apart
     label = ""
+    if mode != "random":
+        label += "_" + mode
     if os.environ.get("ENGINE_PARAMS") is not None:
-        label = "_tuned"
+        label += "_tuned"
         print(f"Engine uses tuned numbers from: {os.environ.get('ENGINE_PARAMS')}")
     results_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{time_per_move:g}s{label}.txt")
 
+    # random openings, or every game from the starting position (an empty opening)
+    if mode == "random":
+        openings = heuristic_test.make_openings(openings_per_level)
+    else:
+        openings = []
+        for _ in range(openings_per_level):
+            openings.append([])
+    use_book = mode == "book"
+
     heuristic_test.keep_awake()
     tasks = []
-    openings = heuristic_test.make_openings(openings_per_level)
     for index, opening in enumerate(openings):
         for elo in ELO_LEVELS:
             for our_colour in ("white", "black"):
-                tasks.append((elo, index, our_colour, opening, time_per_move))
+                tasks.append((elo, index, our_colour, opening, time_per_move, use_book))
 
     print(f"Engine vs Stockfish at {ELO_LEVELS} Elo: {len(tasks)} games, "
-          f"{time_per_move:g}s per move", flush=True)
+          f"{time_per_move:g}s per move, {MODES[mode]}", flush=True)
     games = []
     started = time.time()
     with Pool(initializer=heuristic_test.ignore_ctrl_c) as pool:
@@ -262,7 +287,7 @@ def run():
                   f"about {heuristic_test.duration(left)} left   ", end="", flush=True)
     print()
 
-    report = "\n".join(report_lines(games, time_per_move, (time.time() - started) / 60))
+    report = "\n".join(report_lines(games, time_per_move, (time.time() - started) / 60, mode))
     print("\n" + report)
     with open(results_file, "w") as f:
         f.write(report + "\n")
