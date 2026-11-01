@@ -7,23 +7,49 @@
   <style>
     body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; }
     #board { width: 480px; margin: 20px auto; }
+    #controls { margin: 10px; }
+    #controls select, #controls button { font-size: 16px; padding: 6px 10px; margin: 0 4px; }
+    #promotion { display: none; margin: 10px; }
+    #promotion img { width: 60px; cursor: pointer; background: #3c3c3c; border-radius: 8px; margin: 0 4px; }
+    .last-move { box-shadow: inset 0 0 0 100px rgba(80, 200, 80, 0.43); }
+    .legal-move { background-image: radial-gradient(circle, rgba(20, 20, 20, 0.5) 20%, transparent 20%); }
   </style>
 </head>
 <body>
-  <h1>Felis</h1>
+  <h1>Felis</h1> <!-- need to do elo eval for cloud version-->
+  <div id="controls">
+    <select id="colour">
+      <option value="w">Play as White</option>
+      <option value="b">Play as Black</option>
+    </select>
+    <select id="seconds">
+      <option value="1">1 second per move</option>
+      <option value="3">3 seconds per move</option>
+      <option value="5">5 seconds per move</option>
+    </select>
+    <button id="new-game">New game</button>
+  </div>
   <div id="board"></div>
-  <p id="status">Your move (you are White)</p>
+  <div id="promotion"></div>
+  <p id="status">Pick your colour and time, then press New game</p>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script>
     const PIECE_NAMES = {P: "pawn", N: "knight", B: "bishop", R: "rook", Q: "queen", K: "king"};
+    const PROMOTION_PIECES = ["q", "r", "b", "n"];
 
-    const game = new Chess();
-    const moves = [];
+    let game = new Chess();
+    let moves = [];
     let thinking = false;
+    let playerColour = "w";
+    let seconds = 1;
+    let gameNumber = 0;
+    let promotionMove = null;
+    let selectedSquare = null;
     const status = document.getElementById("status");
+    const promotion = document.getElementById("promotion");
 
     // chessboard.js calls pieces "wP", "bK"...: use your own pictures, e.g. white_pawn.png
     function pieceImage(piece) {
@@ -34,28 +60,98 @@
       return "/pieces/" + colour + "_" + PIECE_NAMES[piece[1]] + ".png";
     }
 
-    function onDragStart(source, piece) {
-      if (thinking || game.game_over() || piece[0] !== "w") {
-        return false;
+    function newGame() {
+      gameNumber += 1;
+      game = new Chess();
+      moves = [];
+      thinking = false;
+      promotionMove = null;
+      promotion.style.display = "none";
+      playerColour = document.getElementById("colour").value;
+      seconds = Number(document.getElementById("seconds").value);
+
+      if (playerColour === "w") {
+        board.orientation("white");
+      } else {
+        board.orientation("black");
+      }
+      board.start();
+      highlightLastMove(null);
+      clearLegalMoves();
+
+      if (playerColour === "w") {
+        status.textContent = "Your move";
+      } else {
+        askFelis();
       }
     }
 
-    function onDrop(source, target) {
-      const move = game.move({from: source, to: target, promotion: "q"});
+    function onDragStart(square, piece) {
+      if (thinking || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
+        return false;
+      }
+      showLegalMoves(square);
+    }
+
+    function tryMove(fromSquare, toSquare) {
+      clearLegalMoves();
+      // a pawn reaching the last rank: ask which piece first
+      const legalMoves = game.moves({square: fromSquare, verbose: true});
+      for (const legalMove of legalMoves) {
+        if (legalMove.to === toSquare && legalMove.flags.includes("p")) {
+          promotionMove = {from: fromSquare, to: toSquare};
+          showPromotionPicker();
+          return;
+        }
+      }
+
+      const move = game.move({from: fromSquare, to: toSquare});
       if (move === null) {
         return "snapback";
       }
-      let uci = source + target;
-      if (move.promotion) {
-        uci += move.promotion;
-      }
-      moves.push(uci);
-      askFelis();
+      playerMoved(fromSquare + toSquare);
     }
+
+    function onDrop(fromSquare, toSquare) {
+      if (fromSquare === toSquare) {
+        return "snapback";
+      }
+      return tryMove(fromSquare, toSquare);
+    }
+
 
     // redraw after castling, en passant or promotion
     function onSnapEnd() {
       board.position(game.fen());
+    }
+
+    function showPromotionPicker() {
+      promotion.innerHTML = "";
+      for (const letter of PROMOTION_PIECES) {
+        const image = document.createElement("img");
+        image.src = pieceImage(playerColour + letter.toUpperCase());
+        image.onclick = function () {
+          choosePromotion(letter);
+        };
+        promotion.appendChild(image);
+      }
+      promotion.style.display = "block";
+      status.textContent = "Pick a piece to promote to";
+    }
+
+    function choosePromotion(letter) {
+      game.move({from: promotionMove.from, to: promotionMove.to, promotion: letter});
+      board.position(game.fen());
+      promotion.style.display = "none";
+      const uci = promotionMove.from + promotionMove.to + letter;
+      promotionMove = null;
+      playerMoved(uci);
+    }
+
+    function playerMoved(uci) {
+      moves.push(uci);
+      highlightLastMove(uci);
+      askFelis();
     }
 
     async function askFelis() {
@@ -65,18 +161,35 @@
       }
       thinking = true;
       status.textContent = "Felis is thinking...";
+      const askedInGame = gameNumber;
 
-      const response = await fetch("/move", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({moves: moves, seconds: 1}),
-      });
-      const data = await response.json();
+      let data = null;
+      try {
+        const response = await fetch("/move", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({moves: moves, seconds: seconds}),
+        });
+        data = await response.json();
+      } catch (error) {
+        data = null;
+      }
+
+      // a new game was started while Felis was thinking: ignore this answer
+      if (askedInGame !== gameNumber) {
+        return;
+      }
+      thinking = false;
+
+      if (data === null || !data.move) {
+        status.textContent = "Couldn't reach Felis, try New game";
+        return;
+      }
 
       game.move({from: data.move.slice(0, 2), to: data.move.slice(2, 4), promotion: data.move[4]});
       moves.push(data.move);
       board.position(game.fen());
-      thinking = false;
+      highlightLastMove(data.move);
 
       if (game.game_over()) {
         status.textContent = gameOverText();
@@ -85,15 +198,51 @@
       }
     }
 
+    // the squares the last move went from and to glow green, like the pygame GUI
+    function highlightLastMove(uci) {
+      $("#board .last-move").removeClass("last-move");
+      if (uci !== null) {
+        findSquare(uci.slice(0, 2)).addClass("last-move");
+        findSquare(uci.slice(2, 4)).addClass("last-move");
+      }
+    }
+
+    function showLegalMoves(square) {
+      clearLegalMoves();
+      selectedSquare = square;
+      const legalMoves = game.moves({square: square, verbose: true});
+      for (const legalMove of legalMoves) {
+        findSquare(legalMove.to).addClass("legal-move");
+      }
+    }
+
+    function findSquare(square) {
+      return $("#board .square-" + square);
+    }
+
+    function clearLegalMoves() {
+      selectedSquare = null;
+      $("#board .legal-move").removeClass("legal-move");
+    }
+
     function gameOverText() {
       if (game.in_checkmate()) {
-        if (game.turn() === "w") {
+        if (game.turn() === playerColour) {
           return "Checkmate, Felis wins";
         } else {
           return "Checkmate, you win!";
         }
       }
-      return "Draw";
+      if (game.in_stalemate()) {
+        return "Draw by stalemate";
+      }
+      if (game.in_threefold_repetition()) {
+        return "Draw by threefold repetition";
+      }
+      if (game.insufficient_material()) {
+        return "Draw by insufficient material";
+      }
+      return "Draw by the 50-move rule";
     }
 
     const board = Chessboard("board", {
@@ -104,6 +253,17 @@
       onDrop: onDrop,
       onSnapEnd: onSnapEnd,
     });
+
+    $("#board").on("click", ".square-55d63", function () {
+      const square = $(this).attr("data-square");
+      if (selectedSquare !== null && $(this).hasClass("legal-move")) {
+        tryMove(selectedSquare, square);
+        board.position(game.fen());
+      }
+    });
+
+    document.getElementById("new-game").onclick = newGame;
+    newGame();
   </script>
 </body>
 </html>
