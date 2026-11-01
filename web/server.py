@@ -15,9 +15,6 @@ ROOT = os.path.dirname(WEB_DIR)
 
 felis = chess.engine.SimpleEngine.popen_uci(engine_command())
 
-
-# runs when the server starts and stops: close Felis on the way out,
-# otherwise --reload gets stuck waiting for it
 @asynccontextmanager
 async def lifespan(app):
     yield
