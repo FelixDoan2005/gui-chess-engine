@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <style>
     body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; }
-    #board { width: 480px; margin: 20px auto; }
+    #board { width: min(90vw, 75vh); margin: 20px auto; }
     #controls { margin: 10px; }
     #controls select, #controls button { font-size: 16px; padding: 6px 10px; margin: 0 4px; }
     #promotion { display: none; margin: 10px; }
@@ -259,6 +259,15 @@
       if (selectedSquare !== null && $(this).hasClass("legal-move")) {
         tryMove(selectedSquare, square);
         board.position(game.fen());
+      }
+    });
+
+    // resize the board with the window (it redraws the squares, so put the green back)
+    window.addEventListener("resize", function () {
+      board.resize();
+      clearLegalMoves();
+      if (moves.length > 0) {
+        highlightLastMove(moves[moves.length - 1]);
       }
     });
 
