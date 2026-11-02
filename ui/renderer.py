@@ -4,6 +4,9 @@ from ui.constants import WIDTH, HEIGHT, SQUARE_SIZE, OFFSET, BOARD_IMAGE_PATH, P
 BUTTON_W, BUTTON_H = 300, 60
 BUTTON_X = WIDTH // 2 - BUTTON_W // 2
 
+# Felis's rating at max difficulty, from tests/results/ratings/local/book_*.txt
+TIME_RATINGS = {1: 1815, 5: 1978, 10: 2059}
+
 class Renderer:
     def __init__(self, screen):
         self.screen = screen
@@ -110,7 +113,7 @@ class Renderer:
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_time_select(self, include_unlimited=True):
+    def draw_time_select(self, include_unlimited=True, show_ratings=False):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Per Move", True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 110))
@@ -130,6 +133,11 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+            # rating next to the button
+            if show_ratings and limit in TIME_RATINGS:
+                rating = self.font_small.render(f"~{TIME_RATINGS[limit]} Elo", True, (200, 200, 200))
+                self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
 
     def draw_custom_time(self, typed, error):
         self.screen.fill((30, 30, 30))

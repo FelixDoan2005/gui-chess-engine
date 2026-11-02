@@ -195,7 +195,11 @@ def main():
             unlimited_allowed = True
             if mode == "evs" or depth is None:
                 unlimited_allowed = False
-            renderer.draw_time_select(include_unlimited=unlimited_allowed)
+            # ratings were only tested at max difficulty
+            show_ratings = False
+            if depth is None:
+                show_ratings = True
+            renderer.draw_time_select(include_unlimited=unlimited_allowed, show_ratings=show_ratings)
             if click:
                 for limit, rect in renderer.time_rects.items():
                     if limit is None and not unlimited_allowed:
