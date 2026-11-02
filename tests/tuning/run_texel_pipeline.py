@@ -89,7 +89,7 @@ def run():
     rating_env = dict(env)
     rating_env["ENGINE_PARAMS"] = params_file
     for seconds, openings in ratings:
-        rating_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{seconds:g}s_tuned.txt")
+        rating_file = os.path.join(heuristic_test.RESULTS_DIR, "texel", f"random_{seconds:g}s_tuned.txt")
         if os.path.exists(rating_file):
             print(f"4. rating at {seconds:g}s: already done, skipped")
             continue

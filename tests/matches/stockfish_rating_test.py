@@ -249,14 +249,15 @@ def run():
         mode = sys.argv[3]
     if mode not in MODES:
         sys.exit(f"The 3rd argument must be one of: {', '.join(MODES)}")
+    # e.g. ratings/local/book_5s.txt
+    results_dir = os.path.join(heuristic_test.RESULTS_DIR, "ratings", "local")
+    name = f"{mode}_{time_per_move:g}s"
     # with tuned numbers (the ENGINE_PARAMS setting, see engine/uci.py), keep the results apart
-    label = ""
-    if mode != "random":
-        label += "_" + mode
     if os.environ.get("ENGINE_PARAMS") is not None:
-        label += "_tuned"
+        results_dir = os.path.join(heuristic_test.RESULTS_DIR, "texel")
+        name += "_tuned"
         print(f"Engine uses tuned numbers from: {os.environ.get('ENGINE_PARAMS')}")
-    results_file = os.path.join(heuristic_test.RESULTS_DIR, f"stockfish_rating_results_{time_per_move:g}s{label}.txt")
+    results_file = os.path.join(results_dir, name + ".txt")
 
     # random openings, or every game from the starting position (an empty opening)
     if mode == "random":

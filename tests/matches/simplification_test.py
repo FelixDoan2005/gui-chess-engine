@@ -29,10 +29,10 @@ DEPTH = 3
 OPENINGS = 500  # each played twice = 1,000 games, about 80 min at depth 3 with quiescence search
 # heuristics to test removing, e.g. {"bishop_pair", "king_attackers"}. the last
 # test removed centre_control, hanging_pieces, knight_outposts, bishop_pawn_pairs
-# and rook_open_files (PASS, see simplification_results.txt)
+# and rook_open_files (PASS, see heuristics/simplification.txt)
 REMOVED = set()
 
-RESULTS_FILE = os.path.join(heuristic_test.RESULTS_DIR, "simplification_results.txt")
+RESULTS_FILE = os.path.join(heuristic_test.RESULTS_DIR, "heuristics", "simplification.txt")
 
 FULL = set(heuristic_test.HEURISTICS)
 SLIM = FULL - REMOVED

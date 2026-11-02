@@ -135,7 +135,7 @@ def run():
         openings_per_level = int(sys.argv[2])
     if len(sys.argv) > 3:
         workers = int(sys.argv[3])
-    results_file = os.path.join(heuristic_test.RESULTS_DIR, f"web_rating_results_{time_per_move:g}s.txt")
+    results_file = os.path.join(heuristic_test.RESULTS_DIR, "ratings", "web", f"random_{time_per_move:g}s.txt")
 
     # check the website answers before starting
     try:
