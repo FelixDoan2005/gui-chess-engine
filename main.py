@@ -107,6 +107,18 @@ def main():
         running = handler.handle(events)
         click = handler.get_mouse_click(events)
 
+        if state != "menu" and state != "message" and click and renderer.menu_rect.collidepoint(click):
+            if engine_thread is not None:
+                if engine is not None:
+                    engine.close()
+                    engine = None
+                if stockfish is not None:
+                    stockfish.close()
+                    stockfish = None
+                engine_thread = None
+            state = "menu"
+            click = None
+
         if state == "menu":
             renderer.draw_menu()
             if click:
@@ -381,6 +393,9 @@ def main():
             renderer.draw_game_over_popup(*game_result)
             if pygame.time.get_ticks() - game_over_time >= GAME_OVER_DISPLAY_MS:
                 state = "menu"
+
+        if state != "menu" and state != "message":
+            renderer.draw_menu_button()
 
         pygame.display.flip()
         clock.tick(FPS)

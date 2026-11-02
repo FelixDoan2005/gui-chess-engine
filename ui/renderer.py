@@ -62,6 +62,13 @@ class Renderer:
             self.stockfish_rects[elo] = pygame.Rect(BUTTON_X, stockfish_y, BUTTON_W, BUTTON_H)
             stockfish_y += BUTTON_H + 15
 
+        self.menu_rect = pygame.Rect(5, 20, 70, 40)
+
+    def draw_menu_button(self):
+        pygame.draw.rect(self.screen, (90, 90, 90), self.menu_rect, border_radius=8)
+        text = self.font_small.render("Menu", True, (255, 255, 255))
+        self.screen.blit(text, (self.menu_rect.centerx - text.get_width() // 2, self.menu_rect.centery - text.get_height() // 2))
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
@@ -166,7 +173,7 @@ class Renderer:
 
     def draw_thinking(self, label="Felis is thinking..."):
         text = self.font_med.render(label, True, (255, 255, 0))
-        self.screen.blit(text, (10, 10))
+        self.screen.blit(text, (85, 10))
 
     def draw_caption(self, label):
         # a line under the board, e.g. who is playing who
