@@ -1,0 +1,10 @@
+Engine (on pypy.exe) vs Stockfish capped to set Elo levels, 5s per move each, 200 games in 77 min, from the starting position, no opening book
+
+  Stockfish Elo   W /  D /  L    score   rating it implies on its own
+           1500    40 /  1 /  9    81.0%   1752
+           1750    22 /  7 / 21    51.0%   1757
+           2000    13 / 12 / 25    38.0%   1915
+           2250    13 /  6 / 31    32.0%   2119
+
+  Rating (best fit to all levels): about 1881   95% range from the games alone [1816, 1945]
+  Referee: 0 games with an illegal move, mismatched boards or an engine error
