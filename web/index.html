@@ -433,6 +433,18 @@
       onSnapEnd: onSnapEnd,
     });
 
+    // only the left mouse button (0) moves pieces: stop right clicks before chessboard.js sees them
+    document.getElementById("board").addEventListener("mousedown", function (event) {
+      if (event.button !== 0) {
+        event.stopPropagation();
+      }
+    }, true);
+
+    // no right click menu on the board (right click is for arrows later)
+    document.getElementById("board").addEventListener("contextmenu", function (event) {
+      event.preventDefault();
+    });
+
     $("#board").on("click", ".square-55d63", function () {
       const square = $(this).attr("data-square");
       if (selectedSquare !== null && $(this).hasClass("legal-move")) {
