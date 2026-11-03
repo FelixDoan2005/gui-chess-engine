@@ -39,13 +39,14 @@
     <input id="name" placeholder="Name (optional)">
     <input id="rating" placeholder="Rating, e.g. 1800 Lichess">
     <button id="new-game">New game</button>
+    <button id="resign">Resign</button>
   </div>
   <div id="felis-clock" class="clock"></div>
   <div id="board"></div>
   <div id="your-clock" class="clock"></div>
   <div id="promotion"></div>
   <p id="status">Pick your colour and time, then press New game</p>
-  <p>Finished games are saved to help test Felis.</p>
+  <p>Games are saved to help test Felis.</p>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
@@ -68,6 +69,8 @@
     let clockRunning = false;
     let clockMinutes = 0;     // the game's clock in minutes, 0 = no clock
     let outOfTime = false;
+    let resigned = false;
+    let gameSaved = false;    // so a game is only saved once
     let premoves = [];        // moves queued while Felis thinks, e.g. [{from: "e2", to: "e4"}]
     const status = document.getElementById("status");
     const promotion = document.getElementById("promotion");
@@ -82,9 +85,12 @@
     }
 
     function newGame() {
+      saveUnfinished();
       gameNumber += 1;
       game = new Chess();
       moves = [];
+      resigned = false;
+      gameSaved = false;
       thinking = false;
       promotionMove = null;
       premoves = [];
@@ -123,7 +129,7 @@
     }
 
     function onDragStart(square, piece) {
-      if (outOfTime || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
+      if (outOfTime || resigned || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
         return false;
       }
       // Felis's turn: this will be a premove
@@ -456,8 +462,14 @@
       return "Draw by the 50-move rule";
     }
 
-    // 1-0 = white won, 0-1 = black won, 1/2-1/2 = draw
+    // 1-0 = white won, 0-1 = black won, 1/2-1/2 = draw, * = unfinished
     function gameResult() {
+      if (resigned) {
+        if (playerColour === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
       if (outOfTime) {
         // clockSide is the side that ran out
         let otherSide = "w";
@@ -479,25 +491,64 @@
         }
         return "1-0";
       }
-      return "1/2-1/2";
+      if (game.game_over()) {
+        return "1/2-1/2";
+      }
+      return "*";
     }
 
-    // sends the finished game to the server, which saves it to the bucket
+    // sends the game to the server, which saves it to the bucket
     function saveGame() {
+      if (gameSaved) {
+        return;
+      }
+      gameSaved = true;
+      const result = gameResult();
+      let reason = status.textContent;
+      if (result === "*") {
+        reason = "Unfinished";
+      }
+      // keepalive: still sends if the page is closing
       fetch("/result", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
+        keepalive: true,
         body: JSON.stringify({
           name: document.getElementById("name").value,
           rating: document.getElementById("rating").value,
           player_colour: playerColour,
           moves: moves,
-          result: gameResult(),
-          reason: status.textContent,
+          result: result,
+          reason: reason,
           clock_minutes: clockMinutes,
           seconds: seconds,
         }),
       }).catch(function () {});
+    }
+
+    // a game left halfway (New game or closing the page) is saved too, as unfinished
+    function saveUnfinished() {
+      if (moves.length >= 2 && !gameSaved) {
+        saveGame();
+      }
+    }
+
+    function resign() {
+      if (moves.length === 0 || gameSaved) {
+        return;
+      }
+      resigned = true;
+      clockRunning = false;
+      thinking = false;
+      // a move Felis is still thinking about gets ignored
+      gameNumber += 1;
+      promotionMove = null;
+      promotion.style.display = "none";
+      clearLegalMoves();
+      premoves = [];
+      drawBoard();
+      status.textContent = "You resigned, Felis wins";
+      saveGame();
     }
 
     // takes the time used off the side that just moved, starts the other clock
@@ -707,6 +758,8 @@
     document.getElementById("seconds").onchange = settingChanged;
     document.getElementById("clock").onchange = settingChanged;
     document.getElementById("new-game").onclick = newGame;
+    document.getElementById("resign").onclick = resign;
+    window.addEventListener("pagehide", saveUnfinished);
     settingChanged();
     setInterval(updateClocks, 100);
   </script>
