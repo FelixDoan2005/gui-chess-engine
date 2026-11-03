@@ -13,6 +13,8 @@
     #promotion img { width: 60px; cursor: pointer; background: #3c3c3c; border-radius: 8px; margin: 0 4px; }
     .last-move { box-shadow: inset 0 0 0 100px rgba(80, 200, 80, 0.43); }
     .legal-move { background-image: radial-gradient(circle, rgba(20, 20, 20, 0.5) 20%, transparent 20%); }
+    .clock { display: none; font-size: 22px; padding: 4px 14px; border-radius: 8px; background: #5a5a5a; width: fit-content; margin: 0 auto; }
+    .clock.running { background: #3c783c; }
   </style>
 </head>
 <body>
@@ -27,9 +29,17 @@
       <option value="3">3 seconds per move (~1996 Elo)</option>
       <option value="5">5 seconds per move (~1935 Elo)</option>
     </select>
+    <select id="clock">
+      <option value="0">No clock</option>
+      <option value="3">3 minutes</option>
+      <option value="5">5 minutes</option>
+      <option value="10">10 minutes</option>
+    </select>
     <button id="new-game">New game</button>
   </div>
+  <div id="felis-clock" class="clock"></div>
   <div id="board"></div>
+  <div id="your-clock" class="clock"></div>
   <div id="promotion"></div>
   <p id="status">Pick your colour and time, then press New game</p>
 
@@ -48,6 +58,11 @@
     let gameNumber = 0;
     let promotionMove = null;
     let selectedSquare = null;
+    let clocks = null;        // milliseconds left, e.g. {w: 180000, b: 180000}, null = no clock
+    let clockSide = "w";      // whose clock is running
+    let clockStart = 0;       // when it started running
+    let clockRunning = false;
+    let outOfTime = false;
     const status = document.getElementById("status");
     const promotion = document.getElementById("promotion");
 
@@ -70,6 +85,19 @@
       playerColour = document.getElementById("colour").value;
       seconds = Number(document.getElementById("seconds").value);
 
+      const clockMinutes = Number(document.getElementById("clock").value);
+      outOfTime = false;
+      if (clockMinutes === 0) {
+        clocks = null;
+        clockRunning = false;
+      } else {
+        clocks = {w: clockMinutes * 60000, b: clockMinutes * 60000};
+        clockSide = "w";
+        clockStart = Date.now();
+        clockRunning = true;
+      }
+      updateClocks();
+
       if (playerColour === "w") {
         board.orientation("white");
       } else {
@@ -87,7 +115,7 @@
     }
 
     function onDragStart(square, piece) {
-      if (thinking || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
+      if (thinking || outOfTime || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
         return false;
       }
       showLegalMoves(square);
@@ -150,12 +178,14 @@
 
     function playerMoved(uci) {
       moves.push(uci);
+      pressClock();
       highlightLastMove(uci);
       askFelis();
     }
 
     async function askFelis() {
       if (game.game_over()) {
+        clockRunning = false;
         status.textContent = gameOverText();
         return;
       }
@@ -163,12 +193,19 @@
       status.textContent = "Felis is thinking...";
       const askedInGame = gameNumber;
 
+      // with a clock, Felis gets both clocks and decides its own time
+      const request = {moves: moves, seconds: seconds};
+      if (clocks !== null) {
+        request.white_clock = timeLeft("w") / 1000;
+        request.black_clock = timeLeft("b") / 1000;
+      }
+
       let data = null;
       try {
         const response = await fetch("/move", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({moves: moves, seconds: seconds}),
+          body: JSON.stringify(request),
         });
         data = await response.json();
       } catch (error) {
@@ -188,10 +225,12 @@
 
       game.move({from: data.move.slice(0, 2), to: data.move.slice(2, 4), promotion: data.move[4]});
       moves.push(data.move);
+      pressClock();
       board.position(game.fen());
       highlightLastMove(data.move);
 
       if (game.game_over()) {
+        clockRunning = false;
         status.textContent = gameOverText();
       } else {
         status.textContent = "Your move";
@@ -245,6 +284,146 @@
       return "Draw by the 50-move rule";
     }
 
+    // takes the time used off the side that just moved, starts the other clock
+    // white's first move is free: the clocks only start after it
+    function pressClock() {
+      if (clocks === null) {
+        return;
+      }
+      const now = Date.now();
+      if (moves.length > 1) {
+        clocks[clockSide] -= now - clockStart;
+      }
+      clockStart = now;
+      clockSide = game.turn();
+    }
+
+    function clockTicking() {
+      return clockRunning && moves.length > 0;
+    }
+
+    function timeLeft(side) {
+      if (clockTicking() && side === clockSide) {
+        return clocks[side] - (Date.now() - clockStart);
+      }
+      return clocks[side];
+    }
+
+    function formatClock(milliseconds) {
+      const total = Math.floor(Math.max(milliseconds, 0) / 1000);
+      return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
+    }
+
+    // runs every 100 ms: redraws the clocks, and ends the game when one runs out
+    function updateClocks() {
+      const felisClock = document.getElementById("felis-clock");
+      const yourClock = document.getElementById("your-clock");
+      if (clocks === null) {
+        felisClock.style.display = "none";
+        yourClock.style.display = "none";
+        return;
+      }
+
+      if (clockTicking() && timeLeft(clockSide) <= 0) {
+        clocks[clockSide] = 0;
+        clockRunning = false;
+        outOfTime = true;
+        // a move Felis is still thinking about gets ignored
+        gameNumber += 1;
+        promotionMove = null;
+        promotion.style.display = "none";
+        clearLegalMoves();
+        status.textContent = timeoutText(clockSide);
+      }
+
+      let felisSide = "w";
+      if (playerColour === "w") {
+        felisSide = "b";
+      }
+      felisClock.textContent = "Felis " + formatClock(timeLeft(felisSide));
+      yourClock.textContent = "You " + formatClock(timeLeft(playerColour));
+      felisClock.classList.toggle("running", clockTicking() && clockSide === felisSide);
+      yourClock.classList.toggle("running", clockTicking() && clockSide === playerColour);
+      felisClock.style.display = "block";
+      yourClock.style.display = "block";
+    }
+
+    // running out of time loses, unless the other side can't possibly checkmate, then it's a draw
+    function timeoutText(flaggedSide) {
+      let otherSide = "w";
+      if (flaggedSide === "w") {
+        otherSide = "b";
+      }
+      if (!canCheckmate(otherSide)) {
+        return "Draw by timeout vs insufficient material";
+      }
+      if (flaggedSide === playerColour) {
+        return "You ran out of time, Felis wins";
+      }
+      return "Felis ran out of time, you win!";
+    }
+
+    // same check as python-chess's has_insufficient_material: only looks at the pieces
+    function canCheckmate(side) {
+      const rows = game.fen().split(" ")[0].split("/");
+      const mine = [];
+      const theirs = [];
+      const bishopSquareColours = [];
+      let pawnsOrKnights = false;
+      for (let rank = 0; rank < 8; rank++) {
+        let file = 0;
+        for (const letter of rows[rank]) {
+          if (letter >= "1" && letter <= "8") {
+            file += Number(letter);
+            continue;
+          }
+          const type = letter.toLowerCase();
+          let colour = "b";
+          if (letter !== type) {
+            colour = "w";
+          }
+          if (colour === side) {
+            mine.push(type);
+          } else {
+            theirs.push(type);
+          }
+          if (type === "b") {
+            bishopSquareColours.push((rank + file) % 2);
+          }
+          if (type === "p" || type === "n") {
+            pawnsOrKnights = true;
+          }
+          file += 1;
+        }
+      }
+
+      if (mine.includes("p") || mine.includes("r") || mine.includes("q")) {
+        return true;
+      }
+      // king + knight: only mates if the other side has pieces (not queens) that block their own king
+      if (mine.includes("n")) {
+        if (mine.length > 2) {
+          return true;
+        }
+        for (const type of theirs) {
+          if (type !== "k" && type !== "q") {
+            return true;
+          }
+        }
+        return false;
+      }
+      // bishops all on one square colour can't mate without pawns or knights on the board
+      if (mine.includes("b")) {
+        const sameColour = !bishopSquareColours.includes(0) || !bishopSquareColours.includes(1);
+        if (sameColour && !pawnsOrKnights) {
+          return false;
+        }
+        return true;
+      }
+      // a lone king
+      return false;
+    }
+
     const board = Chessboard("board", {
       position: "start",
       draggable: true,
@@ -271,8 +450,25 @@
       }
     });
 
+    // changing a setting before the first move starts the game again with it
+    function settingChanged() {
+      // with a clock, Felis uses that instead of the seconds per move, so hide it
+      if (document.getElementById("clock").value === "0") {
+        document.getElementById("seconds").style.display = "inline-block";
+      } else {
+        document.getElementById("seconds").style.display = "none";
+      }
+      if (moves.length === 0) {
+        newGame();
+      }
+    }
+
+    document.getElementById("colour").onchange = settingChanged;
+    document.getElementById("seconds").onchange = settingChanged;
+    document.getElementById("clock").onchange = settingChanged;
     document.getElementById("new-game").onclick = newGame;
-    newGame();
+    settingChanged();
+    setInterval(updateClocks, 100);
   </script>
 </body>
 </html>

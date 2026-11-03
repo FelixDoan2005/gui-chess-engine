@@ -17,7 +17,6 @@ MOVE_DELAY_MS = 600   # Engine vs Stockfish: a pause between moves, so you can f
 PROMOTION_LETTERS = {"queen": "q", "rook": "r", "bishop": "b", "knight": "n"}
 
 
-
 def check_game_end(board, piece_moves):
     # Returns (title, reason) for the game-over popup, or None if play continues.
     if not get_all_legal_moves(board, piece_moves):
@@ -43,6 +42,30 @@ def make_move_and_check_promotion(board, from_sq, to_sq):
     if moved_piece is not None and moved_piece.endswith("pawn") and row in (0, 7):
         return moved_piece.split("_")[0]
     return None
+
+def timeout_result(move_list, flagged):
+    # running out of time loses, unless the other side can't possibly checkmate
+    # (e.g. a lone king), then it's a draw
+    chess_board = chess.Board()
+    for uci in move_list:
+        chess_board.push_uci(uci)
+    if flagged == "white":
+        other = chess.BLACK
+        winner = "Black"
+    else:
+        other = chess.WHITE
+        winner = "White"
+    if chess_board.has_insufficient_material(other):
+        return "Draw", "by timeout vs insufficient material"
+    return f"{winner} wins!", "on time"
+
+def press_clock(clocks, side, clock_start, move_list):
+    # takes the time used off the side that just moved, returns when the next clock starts
+    # white's first move is free: the clocks only start after it
+    now = pygame.time.get_ticks()
+    if len(move_list) > 1:
+        clocks[side] -= (now - clock_start) / 1000
+    return now
 
 def run_engine_search(engine, move_list, limit, game_number, result):
     # the engine runs as its own program (engine/uci.py, or Stockfish): send it
@@ -100,6 +123,10 @@ def main():
     last_move = None          # (from square, to square) of the last move, drawn glowing green
     engine_thread = None
     engine_result = None
+    clock_minutes = None      # game clock in minutes each, None = no clock
+    clocks = None             # seconds left, e.g. {"white": 300.0, "black": 300.0}
+    clock_side = "white"      # whose clock is running
+    clock_start = 0           # when it started running
 
     running = True
     while running:
@@ -125,14 +152,7 @@ def main():
                 if renderer.pvp_rect.collidepoint(click):
                     mode = "pvp"
                     player_colour = None
-                    board = Board()
-                    move_list = []
-                    last_move = None
-                    highlights = []
-                    selected_square = None
-                    promotion_square = None
-                    promotion_colour = None
-                    state = "playing"
+                    state = "clock_select"
                 elif renderer.pve_rect.collidepoint(click):
                     mode = "pve"
                     state = "colour_select"
@@ -178,7 +198,7 @@ def main():
                         if mode == "evs":
                             state = "stockfish_select"
                         else:
-                            state = "time_select"
+                            state = "clock_select"
                         break
 
         elif state == "stockfish_select":
@@ -187,7 +207,20 @@ def main():
                 for elo, rect in renderer.stockfish_rects.items():
                     if rect.collidepoint(click):
                         stockfish_elo = elo
-                        state = "time_select"
+                        state = "clock_select"
+                        break
+
+        elif state == "clock_select":
+            renderer.draw_clock_select()
+            if click:
+                for minutes, rect in renderer.clock_rects.items():
+                    if rect.collidepoint(click):
+                        clock_minutes = minutes
+                        # no clock against an engine: pick the seconds per move instead
+                        if minutes is None and mode != "pvp":
+                            state = "time_select"
+                        else:
+                            state = "start_game"
                         break
 
         elif state == "time_select":
@@ -240,8 +273,15 @@ def main():
 
         elif state == "start_game":
             # start the engine programs if needed, and a fresh board
-            if engine is None:
+            if engine is None and mode != "pvp":
                 engine = chess.engine.SimpleEngine.popen_uci(engine_command())
+
+            if clock_minutes is None:
+                clocks = None
+            else:
+                clocks = {"white": clock_minutes * 60, "black": clock_minutes * 60}
+                clock_side = "white"
+                clock_start = pygame.time.get_ticks()
 
             if mode == "evs":
                 if stockfish is None:
@@ -256,7 +296,11 @@ def main():
                     engine_label = "max"
                 else:
                     engine_label = f"depth {depth}"
-                caption = f"Felis ({engine_label}) vs Stockfish {stockfish_label}, {time_limit:g}s"
+                if clock_minutes is None:
+                    time_label = f"{time_limit:g}s"
+                else:
+                    time_label = f"{clock_minutes} min"
+                caption = f"Felis ({engine_label}) vs Stockfish {stockfish_label}, {time_label}"
                 last_move_time = pygame.time.get_ticks()
 
             game_number += 1
@@ -289,10 +333,18 @@ def main():
                     if ready:
                         if mode == "evs" and board.turn != player_colour:
                             thinker = stockfish
-                            limit = chess.engine.Limit(time=time_limit)
+                            search_depth = None
                         else:
                             thinker = engine
-                            limit = chess.engine.Limit(depth=depth, time=time_limit)
+                            search_depth = depth
+                        if clocks is None:
+                            limit = chess.engine.Limit(depth=search_depth, time=time_limit)
+                        else:
+                            # the pause between moves doesn't count on the clock
+                            if mode == "evs":
+                                clock_start = pygame.time.get_ticks()
+                            # the engine gets both clocks and decides its own time
+                            limit = chess.engine.Limit(depth=search_depth, white_clock=clocks["white"], black_clock=clocks["black"])
                         engine_result = {}
                         engine_thread = threading.Thread(
                             target=run_engine_search,
@@ -313,6 +365,9 @@ def main():
                         last_move = (square_from_name(move[0:2]), square_from_name(move[2:4]))
                         move_list.append(move)
                         last_move_time = pygame.time.get_ticks()
+                        if clocks is not None:
+                            clock_start = press_clock(clocks, clock_side, clock_start, move_list)
+                            clock_side = board.turn
 
                         result = check_game_end(board, piece_moves)
                         if result:
@@ -343,6 +398,9 @@ def main():
                                 state = "promotion"
                             else:
                                 move_list.append(uci)
+                                if clocks is not None:
+                                    clock_start = press_clock(clocks, clock_side, clock_start, move_list)
+                                    clock_side = board.turn
                                 result = check_game_end(board, piece_moves)
                                 if result:
                                     game_result = result
@@ -379,6 +437,9 @@ def main():
                         row, col = promotion_square
                         board.grid[row][col] = f"{promotion_colour}_{kind}"
                         move_list.append(promotion_move + PROMOTION_LETTERS[kind])
+                        if clocks is not None:
+                            clock_start = press_clock(clocks, clock_side, clock_start, move_list)
+                            clock_side = board.turn
                         promotion_move = None
                         promotion_square = None
                         promotion_colour = None
@@ -397,6 +458,36 @@ def main():
             renderer.draw_game_over_popup(*game_result)
             if pygame.time.get_ticks() - game_over_time >= GAME_OVER_DISPLAY_MS:
                 state = "menu"
+
+        # game clock: the side to move loses when theirs runs out
+        # it starts after white's first move, and in Engine vs Stockfish
+        # it waits during the pause between moves
+        clock_ticking = False
+        if clocks is not None and (state == "playing" or state == "promotion") and len(move_list) > 0:
+            if mode != "evs" or engine_thread is not None:
+                clock_ticking = True
+
+        if clock_ticking:
+            time_left = clocks[clock_side] - (pygame.time.get_ticks() - clock_start) / 1000
+            if time_left <= 0:
+                clocks[clock_side] = 0
+                game_result = timeout_result(move_list, clock_side)
+                game_over_time = pygame.time.get_ticks()
+                state = "game_over"
+
+        if clocks is not None and (state == "playing" or state == "promotion" or state == "game_over"):
+            white_left = clocks["white"]
+            black_left = clocks["black"]
+            running_clock = None
+            if state != "game_over" and len(move_list) > 0:
+                running_clock = clock_side
+            if clock_ticking:
+                elapsed = (pygame.time.get_ticks() - clock_start) / 1000
+                if clock_side == "white":
+                    white_left -= elapsed
+                else:
+                    black_left -= elapsed
+            renderer.draw_clocks(white_left, black_left, running_clock)
 
         if state != "menu" and state != "message":
             renderer.draw_menu_button()

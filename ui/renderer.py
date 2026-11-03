@@ -67,6 +67,17 @@ class Renderer:
 
         self.menu_rect = pygame.Rect(5, 20, 70, 40)
 
+        # time control: None = no game clock, otherwise minutes each
+        self.clock_rects = {}
+        clock_y = 340
+        for minutes in [None, 3, 5, 10]:
+            self.clock_rects[minutes] = pygame.Rect(BUTTON_X, clock_y, BUTTON_W, BUTTON_H)
+            clock_y += BUTTON_H + 30
+
+        # the clocks in the right corners: black at the top, white at the bottom
+        self.black_clock_rect = pygame.Rect(WIDTH - 75, 20, 70, 40)
+        self.white_clock_rect = pygame.Rect(WIDTH - 75, HEIGHT - 60, 70, 40)
+
     def draw_menu_button(self):
         pygame.draw.rect(self.screen, (90, 90, 90), self.menu_rect, border_radius=8)
         text = self.font_small.render("Menu", True, (255, 255, 255))
@@ -138,6 +149,35 @@ class Renderer:
             if show_ratings and limit in TIME_RATINGS:
                 rating = self.font_small.render(f"~{TIME_RATINGS[limit]} Elo", True, (200, 200, 200))
                 self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
+
+    def draw_clock_select(self):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Time Control", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        for minutes, rect in self.clock_rects.items():
+            if minutes is None:
+                label = "No clock"
+            else:
+                label = f"{minutes} minutes"
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+    def draw_clocks(self, white_left, black_left, running):
+        # running: the colour whose clock is ticking, drawn green
+        for colour, rect, seconds in [
+            ("white", self.white_clock_rect, white_left),
+            ("black", self.black_clock_rect, black_left),
+        ]:
+            if colour == running:
+                box_colour = (60, 120, 60)
+            else:
+                box_colour = (90, 90, 90)
+            seconds = int(max(seconds, 0))
+            pygame.draw.rect(self.screen, box_colour, rect, border_radius=8)
+            text = self.font_small.render(f"{seconds // 60}:{seconds % 60:02d}", True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
     def draw_custom_time(self, typed, error):
         self.screen.fill((30, 30, 30))

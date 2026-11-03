@@ -36,6 +36,9 @@ def home():
 class MoveRequest(BaseModel):
     moves: list[str]
     seconds: float = 1
+    # game clock: seconds left on each side, None = no clock
+    white_clock: float | None = None
+    black_clock: float | None = None
 
 
 @app.post("/move")
@@ -50,6 +53,14 @@ def move(request: MoveRequest):
     if board.is_game_over():
         return {"move": None}
 
-    seconds = min(request.seconds, MAX_SECONDS)
+    if request.white_clock is None or request.black_clock is None:
+        seconds = min(request.seconds, MAX_SECONDS)
+    else:
+        if board.turn == chess.WHITE:
+            clock_left = request.white_clock
+        else:
+            clock_left = request.black_clock
+        # about 1/30 of the time left, like engine/uci.py, but never over MAX_SECONDS
+        seconds = min(max(clock_left / 30, 0.05), MAX_SECONDS)
     played = felis.play(board, chess.engine.Limit(time=seconds))
     return {"move": played.move.uci()}
