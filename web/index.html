@@ -2,18 +2,21 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Felis</title>
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <style>
-    body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; }
-    #board { width: min(90vw, 75vh); margin: 20px auto; }
-    #controls { margin: 10px; }
-    #controls select, #controls button, #controls input { font-size: 16px; padding: 6px 10px; margin: 0 4px; }
-    #promotion { display: none; margin: 10px; }
+    body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 8px; overflow: hidden; }
+    h1 { margin: 4px 0; }
+    p { margin: 6px 0; }
+    #board { width: min(90vw, 60vh); margin: 8px auto; }
+    #controls { margin: 6px; }
+    #controls select, #controls button, #controls input { font-size: 16px; padding: 6px 10px; margin: 2px 4px; }
+    #promotion { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; padding: 10px; background: rgba(0, 0, 0, 0.7); border-radius: 10px; }
     #promotion img { width: 60px; cursor: pointer; background: #3c3c3c; border-radius: 8px; margin: 0 4px; }
     .last-move { box-shadow: inset 0 0 0 100px rgba(80, 200, 80, 0.43); }
     .legal-move { background-image: radial-gradient(circle, rgba(20, 20, 20, 0.5) 20%, transparent 20%); }
-    .clock { display: none; font-size: 22px; padding: 4px 14px; border-radius: 8px; background: #5a5a5a; width: fit-content; margin: 0 auto; }
+    .clock { visibility: hidden; font-size: 22px; padding: 4px 14px; border-radius: 8px; background: #5a5a5a; width: fit-content; margin: 0 auto; }
     .clock.running { background: #3c783c; }
     .premove { box-shadow: inset 0 0 0 100px rgba(200, 60, 60, 0.5); }
   </style>
@@ -41,9 +44,9 @@
     <button id="new-game">New game</button>
     <button id="resign">Resign</button>
   </div>
-  <div id="felis-clock" class="clock"></div>
+  <div id="felis-clock" class="clock">Felis 0:00</div>
   <div id="board"></div>
-  <div id="your-clock" class="clock"></div>
+  <div id="your-clock" class="clock">You 0:00</div>
   <div id="promotion"></div>
   <p id="status">Pick your colour and time, then press New game</p>
   <p>Games are saved to help test Felis.</p>
@@ -586,8 +589,8 @@
       const felisClock = document.getElementById("felis-clock");
       const yourClock = document.getElementById("your-clock");
       if (clocks === null) {
-        felisClock.style.display = "none";
-        yourClock.style.display = "none";
+        felisClock.style.visibility = "hidden";
+        yourClock.style.visibility = "hidden";
         return;
       }
 
@@ -614,8 +617,8 @@
       yourClock.textContent = "You " + formatClock(timeLeft(playerColour));
       felisClock.classList.toggle("running", clockTicking() && clockSide === felisSide);
       yourClock.classList.toggle("running", clockTicking() && clockSide === playerColour);
-      felisClock.style.display = "block";
-      yourClock.style.display = "block";
+      felisClock.style.visibility = "visible";
+      yourClock.style.visibility = "visible";
     }
 
     // running out of time loses, unless the other side can't possibly checkmate, then it's a draw
@@ -731,9 +734,18 @@
       }
     });
 
+    // the board takes whatever height is left, so the whole page fits without scrolling
+    function fitBoard() {
+      const boardElement = document.getElementById("board");
+      const otherHeight = document.body.offsetHeight - boardElement.offsetHeight;
+      const size = Math.min(document.documentElement.clientWidth * 0.9, window.innerHeight - otherHeight - 4);
+      boardElement.style.width = Math.max(size, 200) + "px";
+      board.resize();
+    }
+
     // resize the board with the window (it redraws the squares, so put the green back)
     window.addEventListener("resize", function () {
-      board.resize();
+      fitBoard();
       clearLegalMoves();
       drawBoard();
       if (moves.length > 0) {
@@ -749,6 +761,7 @@
       } else {
         document.getElementById("seconds").style.display = "none";
       }
+      fitBoard();
       if (moves.length === 0) {
         newGame();
       }
@@ -760,6 +773,7 @@
     document.getElementById("new-game").onclick = newGame;
     document.getElementById("resign").onclick = resign;
     window.addEventListener("pagehide", saveUnfinished);
+    fitBoard();
     settingChanged();
     setInterval(updateClocks, 100);
   </script>
