@@ -8,7 +8,7 @@
     body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; }
     #board { width: min(90vw, 75vh); margin: 20px auto; }
     #controls { margin: 10px; }
-    #controls select, #controls button { font-size: 16px; padding: 6px 10px; margin: 0 4px; }
+    #controls select, #controls button, #controls input { font-size: 16px; padding: 6px 10px; margin: 0 4px; }
     #promotion { display: none; margin: 10px; }
     #promotion img { width: 60px; cursor: pointer; background: #3c3c3c; border-radius: 8px; margin: 0 4px; }
     .last-move { box-shadow: inset 0 0 0 100px rgba(80, 200, 80, 0.43); }
@@ -36,6 +36,8 @@
       <option value="5">5 minutes</option>
       <option value="10">10 minutes</option>
     </select>
+    <input id="name" placeholder="Name (optional)">
+    <input id="rating" placeholder="Rating, e.g. 1800 Lichess">
     <button id="new-game">New game</button>
   </div>
   <div id="felis-clock" class="clock"></div>
@@ -43,6 +45,7 @@
   <div id="your-clock" class="clock"></div>
   <div id="promotion"></div>
   <p id="status">Pick your colour and time, then press New game</p>
+  <p>Finished games are saved to help test Felis.</p>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
@@ -63,6 +66,7 @@
     let clockSide = "w";      // whose clock is running
     let clockStart = 0;       // when it started running
     let clockRunning = false;
+    let clockMinutes = 0;     // the game's clock in minutes, 0 = no clock
     let outOfTime = false;
     let premoves = [];        // moves queued while Felis thinks, e.g. [{from: "e2", to: "e4"}]
     const status = document.getElementById("status");
@@ -88,7 +92,7 @@
       playerColour = document.getElementById("colour").value;
       seconds = Number(document.getElementById("seconds").value);
 
-      const clockMinutes = Number(document.getElementById("clock").value);
+      clockMinutes = Number(document.getElementById("clock").value);
       outOfTime = false;
       if (clockMinutes === 0) {
         clocks = null;
@@ -352,6 +356,7 @@
       if (game.game_over()) {
         clockRunning = false;
         status.textContent = gameOverText();
+        saveGame();
         return;
       }
       thinking = true;
@@ -398,6 +403,7 @@
         clockRunning = false;
         cancelPremoves();
         status.textContent = gameOverText();
+        saveGame();
       } else if (!playPremove()) {
         status.textContent = "Your move";
       }
@@ -448,6 +454,50 @@
         return "Draw by insufficient material";
       }
       return "Draw by the 50-move rule";
+    }
+
+    // 1-0 = white won, 0-1 = black won, 1/2-1/2 = draw
+    function gameResult() {
+      if (outOfTime) {
+        // clockSide is the side that ran out
+        let otherSide = "w";
+        if (clockSide === "w") {
+          otherSide = "b";
+        }
+        if (!canCheckmate(otherSide)) {
+          return "1/2-1/2";
+        }
+        if (clockSide === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
+      if (game.in_checkmate()) {
+        // the side to move is the one that got mated
+        if (game.turn() === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
+      return "1/2-1/2";
+    }
+
+    // sends the finished game to the server, which saves it to the bucket
+    function saveGame() {
+      fetch("/result", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          name: document.getElementById("name").value,
+          rating: document.getElementById("rating").value,
+          player_colour: playerColour,
+          moves: moves,
+          result: gameResult(),
+          reason: status.textContent,
+          clock_minutes: clockMinutes,
+          seconds: seconds,
+        }),
+      }).catch(function () {});
     }
 
     // takes the time used off the side that just moved, starts the other clock
@@ -502,6 +552,7 @@
         premoves = [];
         drawBoard();
         status.textContent = timeoutText(clockSide);
+        saveGame();
       }
 
       let felisSide = "w";
