@@ -246,7 +246,7 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 60, 60), rect, border_radius=8)
             self.screen.blit(self.pieces[f"{colour}_{kind}"], rect.topleft)
 
-    def draw(self, grid, highlights=[], last_move=None):
+    def draw(self, grid, highlights=[], last_move=None, premoves=[]):
         self.screen.blit(self.board_image, (0, 0))
 
         # the last move: the squares it went from and to glow green
@@ -255,6 +255,12 @@ class Renderer:
             glow.fill((80, 200, 80, 110))
             for (row, col) in last_move:
                 self.screen.blit(glow, (col * SQUARE_SIZE + OFFSET, row * SQUARE_SIZE + OFFSET))
+
+        red = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
+        red.fill((200, 60, 60, 130))
+        for premove in premoves:
+            for (row, col) in premove:
+                self.screen.blit(red, (col * SQUARE_SIZE + OFFSET, row * SQUARE_SIZE + OFFSET))
 
         for (row, col) in highlights:
             # find the top-left pixel of this square

@@ -67,6 +67,81 @@ def press_clock(clocks, side, clock_start, move_list):
         clocks[side] -= (now - clock_start) / 1000
     return now
 
+def premove_position(grid, premoves):
+    position = []
+    for row in grid:
+        position.append(row[:])
+    for from_sq, to_sq in premoves:
+        fr, fc = from_sq
+        tr, tc = to_sq
+        piece = position[fr][fc]
+        if piece is None:
+            continue
+        position[fr][fc] = None
+        colour, kind = piece.split("_")
+        if kind == "pawn" and (tr == 0 or tr == 7):
+            position[tr][tc] = f"{colour}_queen"
+        else:
+            position[tr][tc] = piece
+        if kind == "king" and fc == 4 and tc == 6:
+            position[tr][5] = position[tr][7]
+            position[tr][7] = None
+        if kind == "king" and fc == 4 and tc == 2:
+            position[tr][3] = position[tr][0]
+            position[tr][0] = None
+    return position
+
+def premove_targets(square, piece):
+    row, col = square
+    colour, kind = piece.split("_")
+    targets = []
+
+    def add(r, c):
+        if 0 <= r < 8 and 0 <= c < 8:
+            targets.append((r, c))
+
+    if kind == "pawn":
+        if colour == "white":
+            forward = -1
+            start_row = 6
+        else:
+            forward = 1
+            start_row = 1
+        add(row + forward, col)
+        if row == start_row:
+            add(row + 2 * forward, col)
+        add(row + forward, col - 1)
+        add(row + forward, col + 1)
+    elif kind == "knight":
+        for dr, dc in [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]:
+            add(row + dr, col + dc)
+    elif kind == "king":
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                if dr != 0 or dc != 0:
+                    add(row + dr, col + dc)
+        if colour == "white":
+            home_row = 7
+        else:
+            home_row = 0
+        if row == home_row and col == 4:
+            add(row, 6)
+            add(row, 2)
+    else:
+        directions = []
+        if kind == "bishop" or kind == "queen":
+            directions.extend([(1, 1), (1, -1), (-1, 1), (-1, -1)])
+        if kind == "rook" or kind == "queen":
+            directions.extend([(1, 0), (-1, 0), (0, 1), (0, -1)])
+        for dr, dc in directions:
+            r = row + dr
+            c = col + dc
+            while 0 <= r < 8 and 0 <= c < 8:
+                add(r, c)
+                r += dr
+                c += dc
+    return targets
+
 def run_engine_search(engine, move_list, limit, game_number, result):
     # the engine runs as its own program (engine/uci.py, or Stockfish): send it
     # the game so far and wait for its move, e.g. "e7e5"
@@ -127,12 +202,14 @@ def main():
     clocks = None             # seconds left, e.g. {"white": 300.0, "black": 300.0}
     clock_side = "white"      # whose clock is running
     clock_start = 0           # when it started running
+    premoves = []
 
     running = True
     while running:
         events = pygame.event.get()
         running = handler.handle(events)
         click = handler.get_mouse_click(events)
+        right_click = handler.get_right_click(events)
 
         if state != "menu" and state != "message" and click and renderer.menu_rect.collidepoint(click):
             if engine_thread is not None:
@@ -313,6 +390,7 @@ def main():
             promotion_colour = None
             engine_thread = None
             engine_result = None
+            premoves = []
             state = "playing"
 
         elif state == "playing":
@@ -368,15 +446,61 @@ def main():
                         if clocks is not None:
                             clock_start = press_clock(clocks, clock_side, clock_start, move_list)
                             clock_side = board.turn
+                        selected_square = None
+                        highlights = []
 
                         result = check_game_end(board, piece_moves)
                         if result:
                             game_result = result
                             game_over_time = pygame.time.get_ticks()
                             state = "game_over"
+                        elif len(premoves) > 0:
+                            from_sq, to_sq = premoves.pop(0)
+                            piece = board.get_piece(*from_sq)
+                            legal = []
+                            if piece is not None and piece.startswith(board.turn):
+                                _, legal = select_piece(from_sq, piece, board, piece_moves)
+                            if to_sq in legal:
+                                uci = square_name(from_sq) + square_name(to_sq)
+                                last_move = (from_sq, to_sq)
+                                promo_colour = make_move_and_check_promotion(board, from_sq, to_sq)
+                                if promo_colour is not None:
+                                    board.grid[to_sq[0]][to_sq[1]] = f"{promo_colour}_queen"
+                                    uci += "q"
+                                move_list.append(uci)
+                                if clocks is not None:
+                                    clock_start = press_clock(clocks, clock_side, clock_start, move_list)
+                                    clock_side = board.turn
+                                result = check_game_end(board, piece_moves)
+                                if result:
+                                    game_result = result
+                                    game_over_time = pygame.time.get_ticks()
+                                    state = "game_over"
+                            else:
+                                premoves = []
 
-                selected_square = None
-                highlights = []
+                if mode == "evs":
+                    selected_square = None
+                    highlights = []
+                elif right_click:
+                    premoves = []
+                    selected_square = None
+                    highlights = []
+                elif click and state == "playing" and engine_thread is not None:
+                    square = pixel_to_square(*click)
+                    if square:
+                        position = premove_position(board.grid, premoves)
+                        piece = position[square[0]][square[1]]
+                        if selected_square is not None and square in highlights:
+                            premoves.append((selected_square, square))
+                            selected_square = None
+                            highlights = []
+                        elif piece is not None and piece.startswith(player_colour):
+                            selected_square = square
+                            highlights = premove_targets(square, piece)
+                        else:
+                            selected_square = None
+                            highlights = []
             elif click:
                 square = pixel_to_square(*click)
                 if square:
@@ -416,7 +540,7 @@ def main():
                                 selected_square = None
                                 highlights = []
 
-            renderer.draw(board.grid, highlights, last_move)
+            renderer.draw(premove_position(board.grid, premoves), highlights, last_move, premoves)
             if mode == "evs":
                 renderer.draw_caption(caption)
             if engine_thread is not None:
