@@ -22,9 +22,14 @@ Three ways to start the games (the 3rd command line argument):
     book    the normal starting position, opening book on (how people play it)
 start vs book at the same time per move measures what the opening book adds.
 
+The time can also be a game clock: "5m" gives each side 5 minutes for the whole
+game, and each engine decides its own time per move. Running out of time loses,
+unless the other side can't possibly checkmate (then it's a draw).
+
 Run from the project root (or click Run in VS Code):
-    python tests/matches/stockfish_rating_test.py [seconds per move] [openings per level] [random/start/book]
+    python tests/matches/stockfish_rating_test.py [seconds per move, or minutes + m] [openings per level] [random/start/book]
     e.g. python tests/matches/stockfish_rating_test.py 5 25 book
+         python tests/matches/stockfish_rating_test.py 10m 25 book
 """
 import math
 import os
@@ -83,8 +88,43 @@ def board_fen(board):
     return "/".join(rows)
 
 
+def time_label(time_per_move, clock_minutes):
+    # e.g. "5s per move each" or "10 min clock each"
+    if clock_minutes is None:
+        return f"{time_per_move:g}s per move each"
+    return f"{clock_minutes:g} min clock each"
+
+
+def game_score(referee, problem, flagged, our_colour):
+    # the engine's score for one game: 1 win, 0.5 draw, 0 loss
+    if problem is not None:
+        return 0  # count it as a loss
+    if flagged is not None:
+        # out of time loses, unless the other side can't possibly checkmate
+        if flagged == "white":
+            other = chess.BLACK
+        else:
+            other = chess.WHITE
+        if referee.has_insufficient_material(other):
+            return 0.5
+        if flagged == our_colour:
+            return 0
+        return 1
+
+    outcome = referee.outcome(claim_draw=True)
+    if outcome is None or outcome.winner is None:
+        return 0.5
+    if outcome.winner == chess.WHITE:
+        winner = "white"
+    else:
+        winner = "black"
+    if winner == our_colour:
+        return 1
+    return 0
+
+
 def play_game(task):
-    elo, opening_index, our_colour, opening, time_per_move, use_book = task
+    elo, opening_index, our_colour, opening, time_per_move, clock_minutes, use_book = task
     stockfish = chess.engine.SimpleEngine.popen_uci(stockfish_path())
     stockfish.configure({"UCI_LimitStrength": True, "UCI_Elo": elo, "Threads": 1, "Hash": 16})
     engine = chess.engine.SimpleEngine.popen_uci(engine_command())
@@ -97,16 +137,34 @@ def play_game(task):
         referee.push_uci(uci)
         play_uci_move(board, uci)
 
+    # game clock: seconds left for each side, None = time per move instead
+    clocks = None
+    if clock_minutes is not None:
+        clocks = {"white": clock_minutes * 60, "black": clock_minutes * 60}
+    flagged = None  # the colour that ran out of time
+
     problem = None
     try:
         for _ in range(MAX_PLIES):
             if referee.is_game_over(claim_draw=True):
                 break
 
-            if board.turn == our_colour:
-                played = engine.play(referee, chess.engine.Limit(time=time_per_move))
+            if clocks is None:
+                limit = chess.engine.Limit(time=time_per_move)
             else:
-                played = stockfish.play(referee, chess.engine.Limit(time=time_per_move))
+                limit = chess.engine.Limit(white_clock=clocks["white"], black_clock=clocks["black"])
+            started = time.time()
+            if board.turn == our_colour:
+                played = engine.play(referee, limit)
+            else:
+                played = stockfish.play(referee, limit)
+
+            # game clock: take off the time used, out of time loses
+            if clocks is not None:
+                clocks[board.turn] -= time.time() - started
+                if clocks[board.turn] <= 0:
+                    flagged = board.turn
+                    break
 
             # referee: the move must be legal
             if played.move not in referee.legal_moves:
@@ -125,23 +183,9 @@ def play_game(task):
         engine.quit()
         stockfish.quit()
 
-    outcome = referee.outcome(claim_draw=True)
-    if problem is not None:
-        score = 0  # count it as a loss
-    elif outcome is None or outcome.winner is None:
-        score = 0.5
-    else:
-        if outcome.winner == chess.WHITE:
-            winner = "white"
-        else:
-            winner = "black"
-        if winner == our_colour:
-            score = 1
-        else:
-            score = 0
-
+    score = game_score(referee, problem, flagged, our_colour)
     return {"elo": elo, "opening": opening_index, "full_colour": our_colour,
-            "score": score, "problem": problem}
+            "score": score, "problem": problem, "flagged": flagged}
 
 
 def expected_score(rating, opponent):
@@ -187,10 +231,10 @@ def points_spread(games):
     return math.sqrt(variance)
 
 
-def report_lines(games, time_per_move, minutes, mode="random"):
+def report_lines(games, time_per_move, minutes, mode="random", clock_minutes=None):
     lines = [
         f"Engine (on {os.path.basename(engine_command()[0])}{tuned_note()}) vs Stockfish capped to set Elo levels, "
-        f"{time_per_move:g}s per move each, {len(games)} games in {minutes:.0f} min, {MODES[mode]}",
+        f"{time_label(time_per_move, clock_minutes)}, {len(games)} games in {minutes:.0f} min, {MODES[mode]}",
         "",
         f"  {'Stockfish Elo':>13}   {'W /  D /  L':>11}   {'score':>6}   rating it implies on its own",
     ]
@@ -228,6 +272,19 @@ def report_lines(games, time_per_move, minutes, mode="random"):
     lines.append(f"  Referee: {len(problems)} games with an illegal move, mismatched boards or an engine error")
     for problem in problems[:5]:
         lines.append(f"    {problem}")
+
+    # game clock: who ran out of time
+    if clock_minutes is not None:
+        felis_flags = 0
+        stockfish_flags = 0
+        for game in games:
+            if game.get("flagged") is None:
+                continue
+            if game["flagged"] == game["full_colour"]:
+                felis_flags += 1
+            else:
+                stockfish_flags += 1
+        lines.append(f"  Ran out of time: Felis {felis_flags}, Stockfish {stockfish_flags}")
     return lines
 
 
@@ -239,9 +296,15 @@ def run():
     print(f"Engine runs on: {engine_command()[0]}")
 
     time_per_move = TIME_PER_MOVE
+    clock_minutes = None
     openings_per_level = OPENINGS_PER_LEVEL
     if len(sys.argv) > 1:
-        time_per_move = float(sys.argv[1])
+        # "5" = 5 seconds per move, "5m" = a 5 minute clock each
+        if sys.argv[1].endswith("m"):
+            clock_minutes = float(sys.argv[1][:-1])
+            time_per_move = None
+        else:
+            time_per_move = float(sys.argv[1])
     if len(sys.argv) > 2:
         openings_per_level = int(sys.argv[2])
     mode = "random"
@@ -249,9 +312,12 @@ def run():
         mode = sys.argv[3]
     if mode not in MODES:
         sys.exit(f"The 3rd argument must be one of: {', '.join(MODES)}")
-    # e.g. ratings/local/book_5s.txt
+    # e.g. ratings/local/book_5s.txt, or book_10min.txt with a clock
     results_dir = os.path.join(heuristic_test.RESULTS_DIR, "ratings", "local")
-    name = f"{mode}_{time_per_move:g}s"
+    if clock_minutes is None:
+        name = f"{mode}_{time_per_move:g}s"
+    else:
+        name = f"{mode}_{clock_minutes:g}min"
     # with tuned numbers (the ENGINE_PARAMS setting, see engine/uci.py), keep the results apart
     if os.environ.get("ENGINE_PARAMS") is not None:
         results_dir = os.path.join(heuristic_test.RESULTS_DIR, "texel")
@@ -273,10 +339,10 @@ def run():
     for index, opening in enumerate(openings):
         for elo in ELO_LEVELS:
             for our_colour in ("white", "black"):
-                tasks.append((elo, index, our_colour, opening, time_per_move, use_book))
+                tasks.append((elo, index, our_colour, opening, time_per_move, clock_minutes, use_book))
 
     print(f"Engine vs Stockfish at {ELO_LEVELS} Elo: {len(tasks)} games, "
-          f"{time_per_move:g}s per move, {MODES[mode]}", flush=True)
+          f"{time_label(time_per_move, clock_minutes)}, {MODES[mode]}", flush=True)
     games = []
     started = time.time()
     with Pool(initializer=heuristic_test.ignore_ctrl_c) as pool:
@@ -288,7 +354,7 @@ def run():
                   f"about {heuristic_test.duration(left)} left   ", end="", flush=True)
     print()
 
-    report = "\n".join(report_lines(games, time_per_move, (time.time() - started) / 60, mode))
+    report = "\n".join(report_lines(games, time_per_move, (time.time() - started) / 60, mode, clock_minutes))
     print("\n" + report)
     with open(results_file, "w") as f:
         f.write(report + "\n")
