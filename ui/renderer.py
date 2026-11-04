@@ -6,6 +6,7 @@ BUTTON_X = WIDTH // 2 - BUTTON_W // 2
 
 # Felis's rating at max difficulty, from tests/results/ratings/local/book_*.txt
 TIME_RATINGS = {1: 1815, 5: 1978, 10: 2059}
+CLOCK_RATINGS = {3: 2021, 5: 2047, 10: 2141}
 
 class Renderer:
     def __init__(self, screen):
@@ -150,7 +151,7 @@ class Renderer:
                 rating = self.font_small.render(f"~{TIME_RATINGS[limit]} Elo", True, (200, 200, 200))
                 self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
 
-    def draw_clock_select(self):
+    def draw_clock_select(self, show_ratings=False):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Control", True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
@@ -163,6 +164,11 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+            # rating next to the button
+            if show_ratings and minutes in CLOCK_RATINGS:
+                rating = self.font_small.render(f"~{CLOCK_RATINGS[minutes]} Elo", True, (200, 200, 200))
+                self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
 
     def draw_clocks(self, white_left, black_left, running):
         # running: the colour whose clock is ticking, drawn green

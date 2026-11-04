@@ -288,7 +288,11 @@ def main():
                         break
 
         elif state == "clock_select":
-            renderer.draw_clock_select()
+            # ratings were only tested at max difficulty
+            show_ratings = False
+            if mode != "pvp" and depth is None:
+                show_ratings = True
+            renderer.draw_clock_select(show_ratings=show_ratings)
             if click:
                 for minutes, rect in renderer.clock_rects.items():
                     if rect.collidepoint(click):
