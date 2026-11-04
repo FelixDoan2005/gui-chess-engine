@@ -1,6 +1,6 @@
 # Felis: Chess Engine & GUI
 
-![tests](https://github.com/FelixDoan2005/gui-chess-engine/actions/workflows/tests.yml/badge.svg)
+![tests](https://github.com/FelixDoan2005/felis-chess-engine/actions/workflows/tests.yml/badge.svg)
 
 A complete chess game with a built-in chess engine, written in Python with a Pygame GUI, plus a web version you can **[play online](https://felis-97966352715.europe-west2.run.app)**. The engine uses the same core techniques as real chess engines, runs as a standard **UCI engine** (on PyPy when available), and every change to it was measured with engine-vs-engine matches before being kept. **Rated about 2140 Elo against Stockfish with a 10-minute clock** (about 2080 online).
 
@@ -155,8 +155,8 @@ The web tests used fewer games, so their ranges are wider. Where a longer time s
 Requires Python 3.11 (other recent versions should work).
 
 ```bash
-git clone https://github.com/FelixDoan2005/gui-chess-engine.git
-cd gui-chess-engine
+git clone https://github.com/FelixDoan2005/felis-chess-engine.git
+cd felis-chess-engine
 pip install -r requirements.txt
 python main.py
 ```
