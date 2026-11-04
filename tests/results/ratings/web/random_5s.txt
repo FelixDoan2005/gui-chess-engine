@@ -1,0 +1,10 @@
+Web Felis (split across 3 copies of the site: https://felis-97966352715.europe-west2.run.app, https://felis-test-97966352715.europe-west1.run.app, https://felis-test-97966352715.europe-west4.run.app) vs Stockfish capped to set Elo levels, 5s per move each, 120 games in 70 min, random openings, no opening book
+
+  Stockfish Elo   W /  D /  L    score   rating it implies on its own
+           1500    28 /  0 /  2    93.3%   1958
+           1750    14 /  3 / 13    51.7%   1762
+           2000    11 /  5 / 14    45.0%   1965
+           2250     9 /  3 / 18    35.0%   2142
+
+  Rating (best fit to all levels): about 1945   95% range from the games alone [1875, 2015]
+  Referee: 0 games with an illegal move, mismatched boards or an engine error

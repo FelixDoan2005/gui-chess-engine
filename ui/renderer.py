@@ -4,6 +4,10 @@ from ui.constants import WIDTH, HEIGHT, SQUARE_SIZE, OFFSET, BOARD_IMAGE_PATH, P
 BUTTON_W, BUTTON_H = 300, 60
 BUTTON_X = WIDTH // 2 - BUTTON_W // 2
 
+# Felis's rating at max difficulty, from tests/results/ratings/local/book_*.txt
+TIME_RATINGS = {1: 1815, 5: 1978, 10: 2059}
+CLOCK_RATINGS = {3: 2021, 5: 2047, 10: 2141}
+
 class Renderer:
     def __init__(self, screen):
         self.screen = screen
@@ -62,6 +66,24 @@ class Renderer:
             self.stockfish_rects[elo] = pygame.Rect(BUTTON_X, stockfish_y, BUTTON_W, BUTTON_H)
             stockfish_y += BUTTON_H + 15
 
+        self.menu_rect = pygame.Rect(5, 20, 70, 40)
+
+        # time control: None = no game clock, otherwise minutes each
+        self.clock_rects = {}
+        clock_y = 340
+        for minutes in [None, 3, 5, 10]:
+            self.clock_rects[minutes] = pygame.Rect(BUTTON_X, clock_y, BUTTON_W, BUTTON_H)
+            clock_y += BUTTON_H + 30
+
+        # the clocks in the right corners: black at the top, white at the bottom
+        self.black_clock_rect = pygame.Rect(WIDTH - 75, 20, 70, 40)
+        self.white_clock_rect = pygame.Rect(WIDTH - 75, HEIGHT - 60, 70, 40)
+
+    def draw_menu_button(self):
+        pygame.draw.rect(self.screen, (90, 90, 90), self.menu_rect, border_radius=8)
+        text = self.font_small.render("Menu", True, (255, 255, 255))
+        self.screen.blit(text, (self.menu_rect.centerx - text.get_width() // 2, self.menu_rect.centery - text.get_height() // 2))
+
     def draw_menu(self):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Chess", True, (255, 255, 255))
@@ -103,7 +125,7 @@ class Renderer:
             text = self.font_med.render(label, True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
-    def draw_time_select(self, include_unlimited=True):
+    def draw_time_select(self, include_unlimited=True, show_ratings=False):
         self.screen.fill((30, 30, 30))
         title = self.font_large.render("Time Per Move", True, (255, 255, 255))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 110))
@@ -122,6 +144,45 @@ class Renderer:
                 label = f"{limit} seconds"
             pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
             text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+            # rating next to the button
+            if show_ratings and limit in TIME_RATINGS:
+                rating = self.font_small.render(f"~{TIME_RATINGS[limit]} Elo", True, (200, 200, 200))
+                self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
+
+    def draw_clock_select(self, show_ratings=False):
+        self.screen.fill((30, 30, 30))
+        title = self.font_large.render("Time Control", True, (255, 255, 255))
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+        for minutes, rect in self.clock_rects.items():
+            if minutes is None:
+                label = "No clock"
+            else:
+                label = f"{minutes} minutes"
+            pygame.draw.rect(self.screen, (60, 120, 60), rect, border_radius=8)
+            text = self.font_med.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
+
+            # rating next to the button
+            if show_ratings and minutes in CLOCK_RATINGS:
+                rating = self.font_small.render(f"~{CLOCK_RATINGS[minutes]} Elo", True, (200, 200, 200))
+                self.screen.blit(rating, (rect.right + 15, rect.centery - rating.get_height() // 2))
+
+    def draw_clocks(self, white_left, black_left, running):
+        # running: the colour whose clock is ticking, drawn green
+        for colour, rect, seconds in [
+            ("white", self.white_clock_rect, white_left),
+            ("black", self.black_clock_rect, black_left),
+        ]:
+            if colour == running:
+                box_colour = (60, 120, 60)
+            else:
+                box_colour = (90, 90, 90)
+            seconds = int(max(seconds, 0))
+            pygame.draw.rect(self.screen, box_colour, rect, border_radius=8)
+            text = self.font_small.render(f"{seconds // 60}:{seconds % 60:02d}", True, (255, 255, 255))
             self.screen.blit(text, (rect.centerx - text.get_width() // 2, rect.centery - text.get_height() // 2))
 
     def draw_custom_time(self, typed, error):
@@ -166,7 +227,7 @@ class Renderer:
 
     def draw_thinking(self, label="Felis is thinking..."):
         text = self.font_med.render(label, True, (255, 255, 0))
-        self.screen.blit(text, (10, 10))
+        self.screen.blit(text, (85, 10))
 
     def draw_caption(self, label):
         # a line under the board, e.g. who is playing who
@@ -191,7 +252,7 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 60, 60), rect, border_radius=8)
             self.screen.blit(self.pieces[f"{colour}_{kind}"], rect.topleft)
 
-    def draw(self, grid, highlights=[], last_move=None):
+    def draw(self, grid, highlights=[], last_move=None, premoves=[]):
         self.screen.blit(self.board_image, (0, 0))
 
         # the last move: the squares it went from and to glow green
@@ -200,6 +261,12 @@ class Renderer:
             glow.fill((80, 200, 80, 110))
             for (row, col) in last_move:
                 self.screen.blit(glow, (col * SQUARE_SIZE + OFFSET, row * SQUARE_SIZE + OFFSET))
+
+        red = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
+        red.fill((200, 60, 60, 130))
+        for premove in premoves:
+            for (row, col) in premove:
+                self.screen.blit(red, (col * SQUARE_SIZE + OFFSET, row * SQUARE_SIZE + OFFSET))
 
         for (row, col) in highlights:
             # find the top-left pixel of this square

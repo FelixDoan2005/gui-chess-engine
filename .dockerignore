@@ -1,0 +1,7 @@
+.git
+.vscode
+.claude
+tests
+__pycache__
+*.pyc
+*.jsonl

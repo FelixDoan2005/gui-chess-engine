@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Felis</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    body { background: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 8px; overflow: hidden; }
+    h1 { margin: 4px 0; }
+    p { margin: 6px 0; }
+    #board { width: min(90vw, 60vh); margin: 8px auto; }
+    #controls { margin: 6px; }
+    #controls select, #controls button, #controls input { font-size: 16px; padding: 6px 10px; margin: 2px 4px; }
+    #promotion { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; padding: 10px; background: rgba(0, 0, 0, 0.7); border-radius: 10px; }
+    #promotion img { width: 60px; cursor: pointer; background: #3c3c3c; border-radius: 8px; margin: 0 4px; }
+    .last-move { box-shadow: inset 0 0 0 100px rgba(80, 200, 80, 0.43); }
+    .legal-move { background-image: radial-gradient(circle, rgba(20, 20, 20, 0.5) 20%, transparent 20%); }
+    .clock { visibility: hidden; font-size: 22px; padding: 4px 14px; border-radius: 8px; background: #5a5a5a; width: fit-content; margin: 0 auto; }
+    .clock.running { background: #3c783c; }
+    .premove { box-shadow: inset 0 0 0 100px rgba(200, 60, 60, 0.5); }
+  </style>
+</head>
+<body>
+  <h1>Felis</h1> <!-- need to do elo eval for cloud version-->
+  <div id="controls">
+    <select id="colour">
+      <option value="w">Play as White</option>
+      <option value="b">Play as Black</option>
+    </select>
+    <select id="seconds">
+      <option value="1">1 second per move (~1838 Elo)</option>
+      <option value="3">3 seconds per move (~1996 Elo)</option>
+      <option value="5">5 seconds per move (~1935 Elo)</option>
+    </select>
+    <select id="clock">
+      <option value="0">No clock</option>
+      <option value="3">3 minutes (~2025 Elo)</option>
+      <option value="5">5 minutes (~2001 Elo)</option>
+      <option value="10">10 minutes (~2078 Elo)</option>
+    </select>
+    <input id="name" placeholder="Name (optional)">
+    <input id="rating" placeholder="Rating, e.g. 1800 Lichess">
+    <button id="new-game">New game</button>
+    <button id="resign">Resign</button>
+  </div>
+  <div id="felis-clock" class="clock">Felis 0:00</div>
+  <div id="board"></div>
+  <div id="your-clock" class="clock">You 0:00</div>
+  <div id="promotion"></div>
+  <p id="status">Pick your colour and time, then press New game</p>
+  <p>Games are saved to help test Felis.</p>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script>
+    const PIECE_NAMES = {P: "pawn", N: "knight", B: "bishop", R: "rook", Q: "queen", K: "king"};
+    const PROMOTION_PIECES = ["q", "r", "b", "n"];
+
+    let game = new Chess();
+    let moves = [];
+    let thinking = false;
+    let playerColour = "w";
+    let seconds = 1;
+    let gameNumber = 0;
+    let promotionMove = null;
+    let selectedSquare = null;
+    let clocks = null;        // milliseconds left, e.g. {w: 180000, b: 180000}, null = no clock
+    let clockSide = "w";      // whose clock is running
+    let clockStart = 0;       // when it started running
+    let clockRunning = false;
+    let clockMinutes = 0;     // the game's clock in minutes, 0 = no clock
+    let outOfTime = false;
+    let resigned = false;
+    let gameSaved = false;    // so a game is only saved once
+    let premoves = [];        // moves queued while Felis thinks, e.g. [{from: "e2", to: "e4"}]
+    const status = document.getElementById("status");
+    const promotion = document.getElementById("promotion");
+
+    // chessboard.js calls pieces "wP", "bK"...: use your own pictures, e.g. white_pawn.png
+    function pieceImage(piece) {
+      let colour = "black";
+      if (piece[0] === "w") {
+        colour = "white";
+      }
+      return "/pieces/" + colour + "_" + PIECE_NAMES[piece[1]] + ".png";
+    }
+
+    function newGame() {
+      saveUnfinished();
+      gameNumber += 1;
+      game = new Chess();
+      moves = [];
+      resigned = false;
+      gameSaved = false;
+      thinking = false;
+      promotionMove = null;
+      premoves = [];
+      promotion.style.display = "none";
+      playerColour = document.getElementById("colour").value;
+      seconds = Number(document.getElementById("seconds").value);
+
+      clockMinutes = Number(document.getElementById("clock").value);
+      outOfTime = false;
+      if (clockMinutes === 0) {
+        clocks = null;
+        clockRunning = false;
+      } else {
+        clocks = {w: clockMinutes * 60000, b: clockMinutes * 60000};
+        clockSide = "w";
+        clockStart = Date.now();
+        clockRunning = true;
+      }
+      updateClocks();
+
+      if (playerColour === "w") {
+        board.orientation("white");
+      } else {
+        board.orientation("black");
+      }
+      board.start();
+      highlightLastMove(null);
+      clearLegalMoves();
+      drawBoard();
+
+      if (playerColour === "w") {
+        status.textContent = "Your move";
+      } else {
+        askFelis();
+      }
+    }
+
+    function onDragStart(square, piece) {
+      if (outOfTime || resigned || promotionMove !== null || game.game_over() || piece[0] !== playerColour) {
+        return false;
+      }
+      // Felis's turn: this will be a premove
+      if (thinking) {
+        showPremoveTargets(square, piece);
+      } else {
+        showLegalMoves(square);
+      }
+    }
+
+    function tryMove(fromSquare, toSquare) {
+      clearLegalMoves();
+      // a pawn reaching the last rank: ask which piece first
+      const legalMoves = game.moves({square: fromSquare, verbose: true});
+      for (const legalMove of legalMoves) {
+        if (legalMove.to === toSquare && legalMove.flags.includes("p")) {
+          promotionMove = {from: fromSquare, to: toSquare};
+          showPromotionPicker();
+          return;
+        }
+      }
+
+      const move = game.move({from: fromSquare, to: toSquare});
+      if (move === null) {
+        return "snapback";
+      }
+      playerMoved(fromSquare + toSquare);
+    }
+
+    function onDrop(fromSquare, toSquare) {
+      if (fromSquare === toSquare) {
+        return "snapback";
+      }
+      if (thinking) {
+        return addPremove(fromSquare, toSquare);
+      }
+      return tryMove(fromSquare, toSquare);
+    }
+
+    // redraw after castling, en passant, promotion or a premove
+    function onSnapEnd() {
+      drawBoard();
+    }
+
+    // the board shows the real game with the premoves played on top, in red
+    function drawBoard() {
+      board.position(premovePosition(), false);
+      $("#board .premove").removeClass("premove");
+      for (const premove of premoves) {
+        findSquare(premove.from).addClass("premove");
+        findSquare(premove.to).addClass("premove");
+      }
+    }
+
+    // the position after the premoves, as chessboard.js pieces, e.g. {e4: "wP"}
+    function premovePosition() {
+      const position = Chessboard.fenToObj(game.fen().split(" ")[0]);
+      for (const premove of premoves) {
+        const piece = position[premove.from];
+        if (piece === undefined) {
+          continue;
+        }
+        delete position[premove.from];
+        // a premoved pawn on the last rank becomes a queen
+        if (piece[1] === "P" && (premove.to[1] === "8" || premove.to[1] === "1")) {
+          position[premove.to] = piece[0] + "Q";
+        } else {
+          position[premove.to] = piece;
+        }
+        // castling: the rook jumps over the king
+        if (piece[1] === "K" && premove.from[0] === "e" && premove.to[0] === "g") {
+          position["f" + premove.to[1]] = position["h" + premove.to[1]];
+          delete position["h" + premove.to[1]];
+        }
+        if (piece[1] === "K" && premove.from[0] === "e" && premove.to[0] === "c") {
+          position["d" + premove.to[1]] = position["a" + premove.to[1]];
+          delete position["a" + premove.to[1]];
+        }
+      }
+      return position;
+    }
+
+    // every square a piece could go to on an empty board (premoves ignore pieces in the way)
+    function premoveTargets(square, piece) {
+      const file = square.charCodeAt(0) - 97;
+      const rank = Number(square[1]) - 1;
+      const type = piece[1];
+      const targets = [];
+
+      function add(f, r) {
+        if (f >= 0 && f < 8 && r >= 0 && r < 8) {
+          targets.push(String.fromCharCode(97 + f) + (r + 1));
+        }
+      }
+
+      if (type === "P") {
+        let forward = 1;
+        let startRank = 1;
+        if (piece[0] === "b") {
+          forward = -1;
+          startRank = 6;
+        }
+        add(file, rank + forward);
+        if (rank === startRank) {
+          add(file, rank + 2 * forward);
+        }
+        add(file - 1, rank + forward);
+        add(file + 1, rank + forward);
+      } else if (type === "N") {
+        const jumps = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+        for (const jump of jumps) {
+          add(file + jump[0], rank + jump[1]);
+        }
+      } else if (type === "K") {
+        for (let f = -1; f <= 1; f++) {
+          for (let r = -1; r <= 1; r++) {
+            if (f !== 0 || r !== 0) {
+              add(file + f, rank + r);
+            }
+          }
+        }
+        // castling, from the king's starting square
+        let homeRank = 0;
+        if (piece[0] === "b") {
+          homeRank = 7;
+        }
+        if (file === 4 && rank === homeRank) {
+          add(6, rank);
+          add(2, rank);
+        }
+      } else {
+        // bishop, rook and queen: slide to the edge of the board
+        let directions = [];
+        if (type === "B" || type === "Q") {
+          directions.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
+        }
+        if (type === "R" || type === "Q") {
+          directions.push([1, 0], [-1, 0], [0, 1], [0, -1]);
+        }
+        for (const direction of directions) {
+          let f = file + direction[0];
+          let r = rank + direction[1];
+          while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+            add(f, r);
+            f += direction[0];
+            r += direction[1];
+          }
+        }
+      }
+      return targets;
+    }
+
+    function showPremoveTargets(square, piece) {
+      clearLegalMoves();
+      selectedSquare = square;
+      for (const target of premoveTargets(square, piece)) {
+        findSquare(target).addClass("legal-move");
+      }
+    }
+
+    function addPremove(fromSquare, toSquare) {
+      clearLegalMoves();
+      const piece = premovePosition()[fromSquare];
+      if (piece === undefined || !premoveTargets(fromSquare, piece).includes(toSquare)) {
+        return "snapback";
+      }
+      premoves.push({from: fromSquare, to: toSquare});
+      status.textContent = "Felis is thinking... " + premoves.length + " premove(s), right click cancels";
+    }
+
+    function cancelPremoves() {
+      premoves = [];
+      drawBoard();
+      if (thinking) {
+        status.textContent = "Felis is thinking...";
+      }
+    }
+
+    // after Felis moves: play the first premove, or cancel them all if it's now illegal
+    function playPremove() {
+      if (premoves.length === 0) {
+        return false;
+      }
+      const premove = premoves.shift();
+      const move = game.move({from: premove.from, to: premove.to, promotion: "q"});
+      if (move === null) {
+        cancelPremoves();
+        return false;
+      }
+      let uci = premove.from + premove.to;
+      if (move.flags.includes("p")) {
+        uci += "q";
+      }
+      drawBoard();
+      playerMoved(uci);
+      return true;
+    }
+
+    function showPromotionPicker() {
+      promotion.innerHTML = "";
+      for (const letter of PROMOTION_PIECES) {
+        const image = document.createElement("img");
+        image.src = pieceImage(playerColour + letter.toUpperCase());
+        image.onclick = function () {
+          choosePromotion(letter);
+        };
+        promotion.appendChild(image);
+      }
+      promotion.style.display = "block";
+      status.textContent = "Pick a piece to promote to";
+    }
+
+    function choosePromotion(letter) {
+      game.move({from: promotionMove.from, to: promotionMove.to, promotion: letter});
+      drawBoard();
+      promotion.style.display = "none";
+      const uci = promotionMove.from + promotionMove.to + letter;
+      promotionMove = null;
+      playerMoved(uci);
+    }
+
+    function playerMoved(uci) {
+      moves.push(uci);
+      pressClock();
+      highlightLastMove(uci);
+      askFelis();
+    }
+
+    async function askFelis() {
+      if (game.game_over()) {
+        clockRunning = false;
+        status.textContent = gameOverText();
+        saveGame();
+        return;
+      }
+      thinking = true;
+      status.textContent = "Felis is thinking...";
+      const askedInGame = gameNumber;
+
+      // with a clock, Felis gets both clocks and decides its own time
+      const request = {moves: moves, seconds: seconds};
+      if (clocks !== null) {
+        request.white_clock = timeLeft("w") / 1000;
+        request.black_clock = timeLeft("b") / 1000;
+      }
+
+      let data = null;
+      try {
+        const response = await fetch("/move", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(request),
+        });
+        data = await response.json();
+      } catch (error) {
+        data = null;
+      }
+
+      // a new game was started while Felis was thinking: ignore this answer
+      if (askedInGame !== gameNumber) {
+        return;
+      }
+      thinking = false;
+
+      if (data === null || !data.move) {
+        status.textContent = "Couldn't reach Felis, try New game";
+        return;
+      }
+
+      game.move({from: data.move.slice(0, 2), to: data.move.slice(2, 4), promotion: data.move[4]});
+      moves.push(data.move);
+      pressClock();
+      drawBoard();
+      highlightLastMove(data.move);
+
+      if (game.game_over()) {
+        clockRunning = false;
+        cancelPremoves();
+        status.textContent = gameOverText();
+        saveGame();
+      } else if (!playPremove()) {
+        status.textContent = "Your move";
+      }
+    }
+
+    // the squares the last move went from and to glow green, like the pygame GUI
+    function highlightLastMove(uci) {
+      $("#board .last-move").removeClass("last-move");
+      if (uci !== null) {
+        findSquare(uci.slice(0, 2)).addClass("last-move");
+        findSquare(uci.slice(2, 4)).addClass("last-move");
+      }
+    }
+
+    function showLegalMoves(square) {
+      clearLegalMoves();
+      selectedSquare = square;
+      const legalMoves = game.moves({square: square, verbose: true});
+      for (const legalMove of legalMoves) {
+        findSquare(legalMove.to).addClass("legal-move");
+      }
+    }
+
+    function findSquare(square) {
+      return $("#board .square-" + square);
+    }
+
+    function clearLegalMoves() {
+      selectedSquare = null;
+      $("#board .legal-move").removeClass("legal-move");
+    }
+
+    function gameOverText() {
+      if (game.in_checkmate()) {
+        if (game.turn() === playerColour) {
+          return "Checkmate, Felis wins";
+        } else {
+          return "Checkmate, you win!";
+        }
+      }
+      if (game.in_stalemate()) {
+        return "Draw by stalemate";
+      }
+      if (game.in_threefold_repetition()) {
+        return "Draw by threefold repetition";
+      }
+      if (game.insufficient_material()) {
+        return "Draw by insufficient material";
+      }
+      return "Draw by the 50-move rule";
+    }
+
+    // 1-0 = white won, 0-1 = black won, 1/2-1/2 = draw, * = unfinished
+    function gameResult() {
+      if (resigned) {
+        if (playerColour === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
+      if (outOfTime) {
+        // clockSide is the side that ran out
+        let otherSide = "w";
+        if (clockSide === "w") {
+          otherSide = "b";
+        }
+        if (!canCheckmate(otherSide)) {
+          return "1/2-1/2";
+        }
+        if (clockSide === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
+      if (game.in_checkmate()) {
+        // the side to move is the one that got mated
+        if (game.turn() === "w") {
+          return "0-1";
+        }
+        return "1-0";
+      }
+      if (game.game_over()) {
+        return "1/2-1/2";
+      }
+      return "*";
+    }
+
+    // sends the game to the server, which saves it to the bucket
+    function saveGame() {
+      if (gameSaved) {
+        return;
+      }
+      gameSaved = true;
+      const result = gameResult();
+      let reason = status.textContent;
+      if (result === "*") {
+        reason = "Unfinished";
+      }
+      // keepalive: still sends if the page is closing
+      fetch("/result", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        keepalive: true,
+        body: JSON.stringify({
+          name: document.getElementById("name").value,
+          rating: document.getElementById("rating").value,
+          player_colour: playerColour,
+          moves: moves,
+          result: result,
+          reason: reason,
+          clock_minutes: clockMinutes,
+          seconds: seconds,
+        }),
+      }).catch(function () {});
+    }
+
+    // a game left halfway (New game or closing the page) is saved too, as unfinished
+    function saveUnfinished() {
+      if (moves.length >= 2 && !gameSaved) {
+        saveGame();
+      }
+    }
+
+    function resign() {
+      if (moves.length === 0 || gameSaved) {
+        return;
+      }
+      resigned = true;
+      clockRunning = false;
+      thinking = false;
+      // a move Felis is still thinking about gets ignored
+      gameNumber += 1;
+      promotionMove = null;
+      promotion.style.display = "none";
+      clearLegalMoves();
+      premoves = [];
+      drawBoard();
+      status.textContent = "You resigned, Felis wins";
+      saveGame();
+    }
+
+    // takes the time used off the side that just moved, starts the other clock
+    // white's first move is free: the clocks only start after it
+    function pressClock() {
+      if (clocks === null) {
+        return;
+      }
+      const now = Date.now();
+      if (moves.length > 1) {
+        clocks[clockSide] -= now - clockStart;
+      }
+      clockStart = now;
+      clockSide = game.turn();
+    }
+
+    function clockTicking() {
+      return clockRunning && moves.length > 0;
+    }
+
+    function timeLeft(side) {
+      if (clockTicking() && side === clockSide) {
+        return clocks[side] - (Date.now() - clockStart);
+      }
+      return clocks[side];
+    }
+
+    function formatClock(milliseconds) {
+      const total = Math.floor(Math.max(milliseconds, 0) / 1000);
+      return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
+    }
+
+    // runs every 100 ms: redraws the clocks, and ends the game when one runs out
+    function updateClocks() {
+      const felisClock = document.getElementById("felis-clock");
+      const yourClock = document.getElementById("your-clock");
+      if (clocks === null) {
+        felisClock.style.visibility = "hidden";
+        yourClock.style.visibility = "hidden";
+        return;
+      }
+
+      if (clockTicking() && timeLeft(clockSide) <= 0) {
+        clocks[clockSide] = 0;
+        clockRunning = false;
+        outOfTime = true;
+        // a move Felis is still thinking about gets ignored
+        gameNumber += 1;
+        promotionMove = null;
+        promotion.style.display = "none";
+        clearLegalMoves();
+        premoves = [];
+        drawBoard();
+        status.textContent = timeoutText(clockSide);
+        saveGame();
+      }
+
+      let felisSide = "w";
+      if (playerColour === "w") {
+        felisSide = "b";
+      }
+      felisClock.textContent = "Felis " + formatClock(timeLeft(felisSide));
+      yourClock.textContent = "You " + formatClock(timeLeft(playerColour));
+      felisClock.classList.toggle("running", clockTicking() && clockSide === felisSide);
+      yourClock.classList.toggle("running", clockTicking() && clockSide === playerColour);
+      felisClock.style.visibility = "visible";
+      yourClock.style.visibility = "visible";
+    }
+
+    // running out of time loses, unless the other side can't possibly checkmate, then it's a draw
+    function timeoutText(flaggedSide) {
+      let otherSide = "w";
+      if (flaggedSide === "w") {
+        otherSide = "b";
+      }
+      if (!canCheckmate(otherSide)) {
+        return "Draw by timeout vs insufficient material";
+      }
+      if (flaggedSide === playerColour) {
+        return "You ran out of time, Felis wins";
+      }
+      return "Felis ran out of time, you win!";
+    }
+
+    // same check as python-chess's has_insufficient_material: only looks at the pieces
+    function canCheckmate(side) {
+      const rows = game.fen().split(" ")[0].split("/");
+      const mine = [];
+      const theirs = [];
+      const bishopSquareColours = [];
+      let pawnsOrKnights = false;
+      for (let rank = 0; rank < 8; rank++) {
+        let file = 0;
+        for (const letter of rows[rank]) {
+          if (letter >= "1" && letter <= "8") {
+            file += Number(letter);
+            continue;
+          }
+          const type = letter.toLowerCase();
+          let colour = "b";
+          if (letter !== type) {
+            colour = "w";
+          }
+          if (colour === side) {
+            mine.push(type);
+          } else {
+            theirs.push(type);
+          }
+          if (type === "b") {
+            bishopSquareColours.push((rank + file) % 2);
+          }
+          if (type === "p" || type === "n") {
+            pawnsOrKnights = true;
+          }
+          file += 1;
+        }
+      }
+
+      if (mine.includes("p") || mine.includes("r") || mine.includes("q")) {
+        return true;
+      }
+      // king + knight: only mates if the other side has pieces (not queens) that block their own king
+      if (mine.includes("n")) {
+        if (mine.length > 2) {
+          return true;
+        }
+        for (const type of theirs) {
+          if (type !== "k" && type !== "q") {
+            return true;
+          }
+        }
+        return false;
+      }
+      // bishops all on one square colour can't mate without pawns or knights on the board
+      if (mine.includes("b")) {
+        const sameColour = !bishopSquareColours.includes(0) || !bishopSquareColours.includes(1);
+        if (sameColour && !pawnsOrKnights) {
+          return false;
+        }
+        return true;
+      }
+      // a lone king
+      return false;
+    }
+
+    const board = Chessboard("board", {
+      position: "start",
+      draggable: true,
+      pieceTheme: pieceImage,
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd,
+    });
+
+    // only the left mouse button (0) moves pieces: stop right clicks before chessboard.js sees them
+    document.getElementById("board").addEventListener("mousedown", function (event) {
+      if (event.button !== 0) {
+        event.stopPropagation();
+      }
+      // right click cancels the premoves
+      if (event.button === 2 && premoves.length > 0) {
+        cancelPremoves();
+      }
+    }, true);
+
+    // no right click menu on the board (right click is for arrows later)
+    document.getElementById("board").addEventListener("contextmenu", function (event) {
+      event.preventDefault();
+    });
+
+    $("#board").on("click", ".square-55d63", function () {
+      const square = $(this).attr("data-square");
+      if (selectedSquare !== null && $(this).hasClass("legal-move")) {
+        if (thinking) {
+          addPremove(selectedSquare, square);
+        } else {
+          tryMove(selectedSquare, square);
+        }
+        drawBoard();
+      }
+    });
+
+    // the board takes whatever height is left, so the whole page fits without scrolling
+    function fitBoard() {
+      const boardElement = document.getElementById("board");
+      const otherHeight = document.body.offsetHeight - boardElement.offsetHeight;
+      const size = Math.min(document.documentElement.clientWidth * 0.9, window.innerHeight - otherHeight - 4);
+      boardElement.style.width = Math.max(size, 200) + "px";
+      board.resize();
+    }
+
+    // resize the board with the window (it redraws the squares, so put the green back)
+    window.addEventListener("resize", function () {
+      fitBoard();
+      clearLegalMoves();
+      drawBoard();
+      if (moves.length > 0) {
+        highlightLastMove(moves[moves.length - 1]);
+      }
+    });
+
+    // changing a setting before the first move starts the game again with it
+    function settingChanged() {
+      // with a clock, Felis uses that instead of the seconds per move, so hide it
+      if (document.getElementById("clock").value === "0") {
+        document.getElementById("seconds").style.display = "inline-block";
+      } else {
+        document.getElementById("seconds").style.display = "none";
+      }
+      fitBoard();
+      if (moves.length === 0) {
+        newGame();
+      }
+    }
+
+    document.getElementById("colour").onchange = settingChanged;
+    document.getElementById("seconds").onchange = settingChanged;
+    document.getElementById("clock").onchange = settingChanged;
+    document.getElementById("new-game").onclick = newGame;
+    document.getElementById("resign").onclick = resign;
+    window.addEventListener("pagehide", saveUnfinished);
+    fitBoard();
+    settingChanged();
+    setInterval(updateClocks, 100);
+  </script>
+</body>
+</html>
